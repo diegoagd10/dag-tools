@@ -39,6 +39,7 @@ export default function CombinePdfPage() {
       const pageCount = accepted.reduce((sum, pdf) => sum + pdf.pageCount, 0);
       setCombinedPdf({
         blob,
+        url: URL.createObjectURL(blob),
         filename: buildCombinedPdfFilename(),
         size: blob.size,
         pageCount,

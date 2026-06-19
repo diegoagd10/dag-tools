@@ -12,7 +12,7 @@ interface CombinePdfState {
   reset: () => void;
 }
 
-export const useCombinePdfStore = create<CombinePdfState>((set) => ({
+export const useCombinePdfStore = create<CombinePdfState>((set, get) => ({
   sourcePdfs: [],
   combinedPdf: null,
   addFiles: async (files) => {
@@ -52,6 +52,14 @@ export const useCombinePdfStore = create<CombinePdfState>((set) => ({
       next.splice(toIndex, 0, moved);
       return { sourcePdfs: next };
     }),
-  setCombinedPdf: (combined) => set({ combinedPdf: combined }),
-  reset: () => set({ sourcePdfs: [], combinedPdf: null }),
+  setCombinedPdf: (combined) => {
+    const prev = get().combinedPdf;
+    if (prev && prev.url !== combined?.url) URL.revokeObjectURL(prev.url);
+    set({ combinedPdf: combined });
+  },
+  reset: () => {
+    const prev = get().combinedPdf;
+    if (prev) URL.revokeObjectURL(prev.url);
+    set({ sourcePdfs: [], combinedPdf: null });
+  },
 }));
