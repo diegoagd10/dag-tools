@@ -7,7 +7,11 @@ import { SourcePdfList } from "@/components/combine-pdf/SourcePdfList";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
 import { validate } from "@/lib/combine-pdf/validate";
 import { merge } from "@/lib/combine-pdf/merge";
-import { MIN_SOURCE_PDF_COUNT, buildCombinedPdfFilename } from "@/lib/combine-pdf/constants";
+import {
+  MIN_SOURCE_PDF_COUNT,
+  buildCombinedPdfFilename,
+  createCombinedPdf,
+} from "@/lib/combine-pdf/constants";
 import type { PerFileRejectionReason } from "@/lib/combine-pdf/constants";
 
 export default function CombinePdfPage() {
@@ -37,12 +41,9 @@ export default function CombinePdfPage() {
         type: "application/pdf",
       });
       const pageCount = accepted.reduce((sum, pdf) => sum + pdf.pageCount, 0);
-      setCombinedPdf({
-        blob,
-        filename: buildCombinedPdfFilename(),
-        size: blob.size,
-        pageCount,
-      });
+      setCombinedPdf(
+        createCombinedPdf(blob, buildCombinedPdfFilename(), pageCount),
+      );
       router.push("/tools/combine-pdf/result");
     } finally {
       setIsCombining(false);

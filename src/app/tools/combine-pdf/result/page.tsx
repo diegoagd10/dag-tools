@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
 import { formatBytes } from "@/lib/combine-pdf/constants";
 
@@ -10,16 +9,6 @@ export default function CombinePdfResultPage() {
   const router = useRouter();
   const combinedPdf = useCombinePdfStore((s) => s.combinedPdf);
   const reset = useCombinePdfStore((s) => s.reset);
-  const downloadUrl = useMemo(
-    () => (combinedPdf ? URL.createObjectURL(combinedPdf.blob) : null),
-    [combinedPdf],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    };
-  }, [downloadUrl]);
 
   if (!combinedPdf) {
     return (
@@ -70,7 +59,7 @@ export default function CombinePdfResultPage() {
       </dl>
       <div className="flex flex-wrap gap-3">
         <a
-          href={downloadUrl ?? undefined}
+          href={combinedPdf.url}
           download={combinedPdf.filename}
           data-testid="download-button"
           className="inline-flex h-12 w-fit items-center justify-center rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"

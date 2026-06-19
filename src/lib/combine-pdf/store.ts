@@ -2,6 +2,12 @@ import { create } from "zustand";
 import type { CombinedPdf, SourcePdf } from "./types";
 import { analyzeFile } from "./detect";
 
+function revokePreviousUrl(prev: CombinedPdf | null, nextUrl?: string) {
+  if (prev && prev.url !== nextUrl) {
+    URL.revokeObjectURL(prev.url);
+  }
+}
+
 interface CombinePdfState {
   sourcePdfs: SourcePdf[];
   combinedPdf: CombinedPdf | null;
@@ -12,7 +18,7 @@ interface CombinePdfState {
   reset: () => void;
 }
 
-export const useCombinePdfStore = create<CombinePdfState>((set) => ({
+export const useCombinePdfStore = create<CombinePdfState>((set, get) => ({
   sourcePdfs: [],
   combinedPdf: null,
   addFiles: async (files) => {
@@ -52,6 +58,12 @@ export const useCombinePdfStore = create<CombinePdfState>((set) => ({
       next.splice(toIndex, 0, moved);
       return { sourcePdfs: next };
     }),
-  setCombinedPdf: (combined) => set({ combinedPdf: combined }),
-  reset: () => set({ sourcePdfs: [], combinedPdf: null }),
+  setCombinedPdf: (combined) => {
+    revokePreviousUrl(get().combinedPdf, combined?.url);
+    set({ combinedPdf: combined });
+  },
+  reset: () => {
+    revokePreviousUrl(get().combinedPdf);
+    set({ sourcePdfs: [], combinedPdf: null });
+  },
 }));

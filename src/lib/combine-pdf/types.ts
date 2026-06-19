@@ -27,6 +27,7 @@ export interface ValidationResult {
 
 export interface CombinedPdf {
   blob: Blob;
+  url: string;
   filename: string;
   size: number;
   pageCount: number;
