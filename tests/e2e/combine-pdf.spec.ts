@@ -47,3 +47,42 @@ test("home → upload 2 PDFs → combine → result → download a valid Combine
   const combined = await PDFDocument.load(bytes);
   expect(combined.getPageCount()).toBe(3);
 });
+
+test("reordering Source PDFs changes the Combined PDF page order", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("open-combine-pdf").click();
+  await page.waitForURL("**/tools/combine-pdf");
+
+  await page
+    .getByTestId("pdf-file-input")
+    .setInputFiles([fixtures("sample-1.pdf"), fixtures("sample-2.pdf")]);
+
+  const rows = page.getByTestId("source-pdf-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("sample-1.pdf");
+  await expect(rows.nth(1)).toContainText("sample-2.pdf");
+
+  await rows.nth(0).dragTo(rows.nth(1));
+
+  await expect(rows.nth(0)).toContainText("sample-2.pdf");
+  await expect(rows.nth(1)).toContainText("sample-1.pdf");
+
+  await page.getByTestId("combine-button").click();
+  await page.waitForURL("**/tools/combine-pdf/result");
+
+  const download = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByTestId("download-button").click(),
+  ]).then(([d]) => d);
+
+  const destination = resolve(tmpdir(), `combined-reordered-${Date.now()}.pdf`);
+  await download.saveAs(destination);
+  const combined = await PDFDocument.load(await readFile(destination));
+
+  const firstPage = combined.getPage(0);
+  expect(firstPage.getWidth()).toBe(842);
+  expect(firstPage.getHeight()).toBe(595);
+  expect(combined.getPageCount()).toBe(3);
+});
