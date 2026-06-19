@@ -5,8 +5,7 @@ export interface AppDeps {
   db: DB;
 }
 
-export function createApp(deps: AppDeps): Hono {
-  const { db } = deps;
+export function createApp({ db }: AppDeps): Hono {
   const app = new Hono();
 
   app.get("/api/v1/ping", (c) => {
