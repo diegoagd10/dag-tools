@@ -1,7 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 
-function entryName(index: number): string {
+export function entryName(index: number): string {
   return `page-${String(index + 1).padStart(3, "0")}.pdf`;
 }
 

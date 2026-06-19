@@ -1,12 +1,7 @@
 import { create } from "zustand";
 import type { SourcePdf, SplitResult } from "./types";
 import { analyzeFile } from "@/lib/pdf-tools/detect";
-
-function revokePreviousUrl(prev: SplitResult | null, nextUrl?: string) {
-  if (prev && prev.url !== nextUrl) {
-    URL.revokeObjectURL(prev.url);
-  }
-}
+import { revokePreviousUrl } from "@/lib/pdf-tools/blob-url";
 
 interface SplitPdfState {
   sourcePdf: SourcePdf | null;

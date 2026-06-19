@@ -3,15 +3,11 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
-import { split } from "@/lib/split-pdf/split";
+import { split, entryName } from "@/lib/split-pdf/split";
 
 async function fileFrom(path: string, name: string): Promise<File> {
   const buffer = await readFile(path);
   return new File([buffer], name);
-}
-
-function entryName(index: number): string {
-  return `page-${String(index + 1).padStart(3, "0")}.pdf`;
 }
 
 describe("split", () => {

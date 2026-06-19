@@ -1,14 +1,7 @@
 export type SplitRejectionReason = "not-a-pdf" | "encrypted" | "oversize";
 
-export interface SourcePdf {
-  id: string;
-  file: File;
-  name: string;
-  size: number;
-  isPdf: boolean;
-  encrypted: boolean;
-  pageCount: number;
-}
+import type { SourcePdf } from "@/lib/pdf-tools/types";
+export type { SourcePdf };
 
 export interface SplitValidationResult {
   accepted: boolean;
