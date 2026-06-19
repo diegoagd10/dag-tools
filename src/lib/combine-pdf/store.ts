@@ -1,12 +1,7 @@
 import { create } from "zustand";
 import type { CombinedPdf, SourcePdf } from "./types";
-import { analyzeFile } from "./detect";
-
-function revokePreviousUrl(prev: CombinedPdf | null, nextUrl?: string) {
-  if (prev && prev.url !== nextUrl) {
-    URL.revokeObjectURL(prev.url);
-  }
-}
+import { analyzeFile } from "@/lib/pdf-tools/detect";
+import { revokePreviousUrl } from "@/lib/pdf-tools/blob-url";
 
 interface CombinePdfState {
   sourcePdfs: SourcePdf[];

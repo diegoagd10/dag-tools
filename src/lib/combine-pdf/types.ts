@@ -4,15 +4,8 @@ export type RejectionReason =
   | "encrypted"
   | "total-size-exceeded";
 
-export interface SourcePdf {
-  id: string;
-  file: File;
-  name: string;
-  size: number;
-  isPdf: boolean;
-  encrypted: boolean;
-  pageCount: number;
-}
+import type { SourcePdf } from "@/lib/pdf-tools/types";
+export type { SourcePdf };
 
 export interface RejectedFile {
   reason: RejectionReason;
