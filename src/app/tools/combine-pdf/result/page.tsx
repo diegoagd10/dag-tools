@@ -46,6 +46,11 @@ export default function CombinePdfResultPage() {
   const combinedPdf = useCombinePdfStore((s) => s.combinedPdf);
   const reset = useCombinePdfStore((s) => s.reset);
 
+  function handleCombineMore() {
+    reset();
+    router.push("/tools/combine-pdf");
+  }
+
   if (!combinedPdf) {
     return (
       <main className="mx-auto flex w-full max-w-2xl flex-col px-6 pt-8 pb-24 sm:pt-10">
@@ -73,11 +78,6 @@ export default function CombinePdfResultPage() {
         </section>
       </main>
     );
-  }
-
-  function handleCombineMore() {
-    reset();
-    router.push("/tools/combine-pdf");
   }
 
   return (

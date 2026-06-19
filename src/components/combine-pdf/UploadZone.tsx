@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PdfIcon } from "@/components/tool-icons";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
 import {
   TOTAL_SIZE_LIMIT_BYTES,
@@ -9,24 +10,6 @@ import {
 
 interface UploadZoneProps {
   runningTotalBytes: number;
-}
-
-function PageStack() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 48 48"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.25"
-      strokeLinejoin="round"
-      className="h-10 w-10 text-ink-soft"
-    >
-      <rect x="10" y="14" width="26" height="30" rx="2" />
-      <rect x="14" y="10" width="26" height="30" rx="2" />
-      <rect x="18" y="6" width="26" height="30" rx="2" />
-    </svg>
-  );
 }
 
 export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
@@ -58,7 +41,7 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
           isDragOver ? "border-accent bg-accent/10" : "",
         ].join(" ")}
       >
-        <PageStack />
+        <PdfIcon className="h-10 w-10 text-ink-soft" />
         <div className="flex flex-col gap-1.5">
           <p className="font-sans text-xl font-medium text-ink">
             {isDragOver ? "Release to add" : "Drop PDFs here"}

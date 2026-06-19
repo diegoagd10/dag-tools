@@ -33,7 +33,6 @@
   --color-focus: var(--focus);
 
   --font-sans: var(--font-inter);
-  --font-display: var(--font-sans);
   --font-mono: var(--font-plex-mono);
 
   --radius-sm: 4px;

@@ -20,6 +20,15 @@ function formatIndex(index: number): string {
   return String(index + 1).padStart(2, "0");
 }
 
+function rowStateClassName(
+  isDragging: boolean,
+  isDropTarget: boolean,
+): string {
+  if (isDragging) return "border-accent opacity-50";
+  if (isDropTarget) return "ring-1 ring-accent";
+  return "hover:bg-surface-hover";
+}
+
 function GripIcon() {
   return (
     <svg
@@ -104,11 +113,7 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
               className={classNames(
                 "group flex select-none items-center gap-4 rounded-md border border-transparent bg-surface px-4 py-3 transition-colors duration-150",
                 "cursor-grab active:cursor-grabbing",
-                isDragging
-                  ? "border-accent opacity-50"
-                  : isDropTarget
-                    ? "ring-1 ring-accent"
-                    : "hover:bg-surface-hover",
+                rowStateClassName(isDragging, isDropTarget),
                 rejection && "border-danger/50",
               )}
             >

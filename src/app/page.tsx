@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ToolIcon } from "@/components/tool-icons";
+import { PdfIcon } from "@/components/tool-icons";
 
 export default function Home() {
   return (
@@ -23,10 +23,7 @@ export default function Home() {
           className="block rounded-lg bg-surface p-6 transition-colors duration-150 hover:bg-surface-hover"
         >
           <div className="flex items-start gap-4">
-            <ToolIcon
-              variant="pdf"
-              className="h-10 w-10 shrink-0 text-ink-soft"
-            />
+            <PdfIcon className="h-10 w-10 shrink-0 text-ink-soft" />
             <div className="flex flex-col gap-2">
               <h2 className="font-sans text-2xl font-medium leading-tight tracking-[-0.01em] text-ink">
                 Combine PDFs
