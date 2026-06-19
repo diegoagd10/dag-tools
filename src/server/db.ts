@@ -28,7 +28,9 @@ export function openDatabase(path: string): DB {
 
 export function artifactsTableExists(db: DB): boolean {
   const row = db
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'artifacts'")
-    .get() as { name: string } | undefined;
+    .prepare<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'artifacts'"
+    )
+    .get();
   return row?.name === "artifacts";
 }
