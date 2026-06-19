@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSplitPdfStore } from "@/lib/split-pdf/store";
@@ -45,6 +46,24 @@ export default function SplitPdfResultPage() {
   const router = useRouter();
   const splitResult = useSplitPdfStore((s) => s.splitResult);
   const reset = useSplitPdfStore((s) => s.reset);
+
+  const latestUrl = useRef<string | null>(splitResult?.url ?? null);
+  useEffect(() => {
+    latestUrl.current = splitResult?.url ?? null;
+  }, [splitResult]);
+
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      const url = latestUrl.current;
+      if (!url) return;
+      setTimeout(() => {
+        if (!mounted.current) URL.revokeObjectURL(url);
+      }, 0);
+    };
+  }, []);
 
   if (!splitResult) {
     return (

@@ -124,3 +124,16 @@ test("replacing a rejected upload with a valid PDF clears the rejection and enab
   await expect(page.getByTestId("running-size")).toContainText("/ 50 MB");
   await expect(page.getByTestId("split-button")).toBeEnabled();
 });
+
+test("direct navigation to the result page without a prior split shows the empty state", async ({
+  page,
+}) => {
+  await page.goto("/tools/split-pdf/result");
+
+  await expect(page.getByText("No split to show")).toBeVisible();
+  const backLink = page.getByRole("link", { name: /open split/i });
+  await expect(backLink).toBeVisible();
+
+  await backLink.click();
+  await page.waitForURL("**/tools/split-pdf");
+});
