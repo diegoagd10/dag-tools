@@ -8,18 +8,18 @@ export interface Storage {
 }
 
 export function createStorage(storageDir: string): Storage {
+  const resolvePath = (id: string, ext: string) => join(storageDir, `${id}.${ext}`);
+
   return {
-    path(id, ext) {
-      return join(storageDir, `${id}.${ext}`);
-    },
+    path: resolvePath,
     async write(id, ext, data) {
       await mkdir(storageDir, { recursive: true });
-      const filePath = join(storageDir, `${id}.${ext}`);
+      const filePath = resolvePath(id, ext);
       await writeFile(filePath, data);
       return filePath;
     },
     async read(id, ext) {
-      return readFile(join(storageDir, `${id}.${ext}`));
+      return readFile(resolvePath(id, ext));
     },
   };
 }
