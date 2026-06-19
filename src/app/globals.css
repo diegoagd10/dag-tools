@@ -3,76 +3,41 @@
 :root {
   color-scheme: dark;
 
-  --paper: #15140F;
-  --surface: #1C1B16;
-  --surface-raised: #24231D;
-  --surface-sunken: #0F0E0B;
+  --paper: #121212;
+  --surface: #181818;
+  --surface-hover: #282828;
 
-  --ink: #F4F1E8;
-  --ink-soft: #C9C5B6;
-  --muted: #807C72;
+  --ink: #FFFFFF;
+  --ink-soft: #B3B3B3;
+  --muted: #6A6A6A;
 
-  --hairline: #2E2C25;
-  --hairline-strong: #3A3830;
+  --accent: #F43F5E;
+  --accent-hover: #E11D48;
+  --accent-ink: #FFFFFF;
 
-  --accent: #C68A3D;
-  --accent-soft: #8A5F2A;
-  --accent-ink: #15140F;
-
-  --danger: #D86A4A;
-  --focus: #C68A3D;
-
-  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.96  0 0 0 0 0.94  0 0 0 0 0.90  0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --paper: #F2EFE7;
-    --surface: #E9E5DB;
-    --surface-raised: #FBF9F2;
-    --surface-sunken: #E5E1D5;
-    --ink: #1B1A17;
-    --ink-soft: #3A3833;
-    --muted: #6B6862;
-    --hairline: #D9D4C7;
-    --hairline-strong: #B8B2A0;
-    --accent: #9B6A2B;
-    --accent-soft: #C68A3D;
-    --accent-ink: #FBF9F2;
-    --danger: #A8442B;
-    --focus: #1B1A17;
-  }
+  --danger: #F87171;
+  --focus: #F43F5E;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-muted: var(--muted);
-  --color-hairline: var(--hairline);
-  --color-hairline-strong: var(--hairline-strong);
   --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
   --color-focus: var(--focus);
 
   --font-sans: var(--font-inter);
-  --font-display: var(--font-fraunces);
   --font-mono: var(--font-plex-mono);
 
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 14px;
-
-  --shadow-sm: 0 1px 2px rgba(20, 18, 12, 0.45);
-  --shadow-md: 0 2px 12px rgba(20, 18, 12, 0.5), 0 1px 2px rgba(20, 18, 12, 0.4);
-  --shadow-lg: 0 16px 40px rgba(20, 18, 12, 0.55), 0 2px 6px rgba(20, 18, 12, 0.4);
-  --shadow-accent: 0 8px 24px rgba(198, 138, 61, 0.3);
+  --radius-lg: 8px;
 }
 
 html {
@@ -84,10 +49,6 @@ html {
 
 body {
   background-color: var(--paper);
-  background-image:
-    var(--grain),
-    radial-gradient(ellipse 90% 60% at 50% -8%, rgba(198, 138, 61, 0.08), transparent 65%);
-  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
 }

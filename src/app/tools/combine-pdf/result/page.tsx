@@ -46,48 +46,38 @@ export default function CombinePdfResultPage() {
   const combinedPdf = useCombinePdfStore((s) => s.combinedPdf);
   const reset = useCombinePdfStore((s) => s.reset);
 
+  function handleCombineMore() {
+    reset();
+    router.push("/tools/combine-pdf");
+  }
+
   if (!combinedPdf) {
     return (
       <main className="mx-auto flex w-full max-w-2xl flex-col px-6 pt-8 pb-24 sm:pt-10">
         <nav className="mb-10">
           <Link
             href="/tools/combine-pdf"
-            className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-ink"
+            className="inline-flex items-center text-sm text-muted transition-colors duration-150 hover:text-ink"
           >
-            <span
-              aria-hidden="true"
-              className="transition-transform duration-200 group-hover:-translate-x-0.5"
-            >
-              ←
-            </span>
             Back to combine
           </Link>
         </nav>
-        <section className="flex flex-col gap-5 rounded-lg border border-hairline bg-surface-raised p-8 shadow-sm">
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-            No result
-          </span>
-          <h1 className="font-display text-3xl font-medium leading-[1.05] tracking-[-0.02em] text-ink sm:text-4xl">
-            Nothing to show <em className="font-display italic text-ink-soft">yet</em>.
+        <section className="flex flex-col gap-5 rounded-lg bg-surface p-6">
+          <h1 className="font-sans text-3xl font-medium leading-[1.05] tracking-[-0.02em] text-ink sm:text-4xl">
+            Nothing to show <span className="text-accent">yet</span>.
           </h1>
           <p className="max-w-md text-sm leading-relaxed text-ink-soft">
             Run a combine first, then this page will show the result.
           </p>
           <Link
             href="/tools/combine-pdf"
-            className="mt-2 inline-flex w-fit items-center gap-2 rounded-md border border-hairline-strong px-5 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink transition-colors hover:border-ink"
+            className="mt-2 inline-flex w-fit items-center rounded-md border border-white/10 bg-transparent px-5 py-3 text-sm font-medium text-ink transition-colors duration-150 hover:border-white/20 hover:bg-white/5"
           >
             Open combine
-            <span aria-hidden="true">→</span>
           </Link>
         </section>
       </main>
     );
-  }
-
-  function handleCombineMore() {
-    reset();
-    router.push("/tools/combine-pdf");
   }
 
   return (
@@ -95,66 +85,47 @@ export default function CombinePdfResultPage() {
       <nav className="mb-10">
         <Link
           href="/tools/combine-pdf"
-          className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-ink"
+          className="inline-flex items-center text-sm text-muted transition-colors duration-150 hover:text-ink"
         >
-          <span
-            aria-hidden="true"
-            className="transition-transform duration-200 group-hover:-translate-x-0.5"
-          >
-            ←
-          </span>
           Back to combine
         </Link>
       </nav>
 
       <header className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-xs font-medium text-accent">01</span>
-          <span aria-hidden="true" className="h-3 w-px bg-hairline" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-            Result
-          </span>
-        </div>
         <div className="flex items-end justify-between gap-6">
-          <h1 className="font-display text-4xl font-medium leading-[1.04] tracking-[-0.028em] text-ink sm:text-5xl">
+          <h1 className="font-sans text-4xl font-medium leading-[1.04] tracking-[-0.028em] text-ink sm:text-5xl">
             Your combined PDF is{" "}
-            <em className="font-display italic text-accent">ready</em>.
+            <span className="text-accent">ready</span>.
           </h1>
           <Checkmark />
         </div>
       </header>
 
-      <section className="mt-10 overflow-hidden rounded-lg border border-hairline bg-surface-raised shadow-sm">
-        <dl className="divide-y divide-hairline">
-          <div className="flex items-baseline justify-between gap-4 px-6 py-4">
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Filename
-            </dt>
+      <section className="mt-10 rounded-lg bg-surface p-6">
+        <dl className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="shrink-0 text-sm text-muted">Filename</dt>
             <dd
               data-testid="combined-filename"
-              className="truncate text-sm text-ink"
+              className="min-w-0 truncate text-right text-sm text-ink"
             >
               {combinedPdf.filename}
             </dd>
           </div>
-          <div className="flex items-baseline justify-between gap-4 px-6 py-4">
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Size
-            </dt>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="shrink-0 text-sm text-muted">Size</dt>
             <dd
               data-testid="combined-size"
-              className="font-mono text-sm tabular-nums text-ink"
+              className="text-sm tabular-nums text-ink"
             >
               {formatBytes(combinedPdf.size)}
             </dd>
           </div>
-          <div className="flex items-baseline justify-between gap-4 px-6 py-4">
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Pages
-            </dt>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="shrink-0 text-sm text-muted">Pages</dt>
             <dd
               data-testid="combined-page-count"
-              className="font-mono text-sm tabular-nums text-ink"
+              className="text-sm tabular-nums text-ink"
             >
               {combinedPdf.pageCount} pages
             </dd>
@@ -162,27 +133,21 @@ export default function CombinePdfResultPage() {
         </dl>
       </section>
 
-      <div className="mt-8 flex flex-wrap items-stretch gap-3">
+      <div className="mt-8 flex flex-wrap gap-3">
         <a
           href={combinedPdf.url}
           download={combinedPdf.filename}
           data-testid="download-button"
-          className="group inline-flex h-14 items-center justify-center gap-3 rounded-md bg-accent px-6 font-mono text-xs uppercase tracking-[0.14em] text-accent-ink shadow-sm transition-all duration-200 hover:bg-accent-soft hover:shadow-accent"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-accent px-6 text-sm font-medium text-accent-ink transition-colors duration-150 hover:bg-accent-hover"
         >
           <DownloadIcon />
           Download
-          <span
-            aria-hidden="true"
-            className="transition-transform duration-200 group-hover:translate-x-0.5"
-          >
-            →
-          </span>
         </a>
         <button
           type="button"
           onClick={handleCombineMore}
           data-testid="combine-more-button"
-          className="inline-flex h-14 items-center justify-center gap-3 rounded-md border border-hairline-strong px-6 font-mono text-[11px] uppercase tracking-[0.14em] text-ink transition-colors duration-200 hover:border-ink"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-white/10 bg-transparent px-6 text-sm font-medium text-ink transition-colors duration-150 hover:border-white/20 hover:bg-white/5"
         >
           Combine more
         </button>

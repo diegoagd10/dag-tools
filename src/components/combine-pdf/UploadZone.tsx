@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PdfIcon } from "@/components/tool-icons";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
 import {
   TOTAL_SIZE_LIMIT_BYTES,
@@ -9,24 +10,6 @@ import {
 
 interface UploadZoneProps {
   runningTotalBytes: number;
-}
-
-function PageStack() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 48 48"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.25"
-      strokeLinejoin="round"
-      className="h-10 w-10 text-ink-soft"
-    >
-      <rect x="10" y="14" width="26" height="30" rx="2" />
-      <rect x="14" y="10" width="26" height="30" rx="2" />
-      <rect x="18" y="6" width="26" height="30" rx="2" />
-    </svg>
-  );
 }
 
 export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
@@ -54,31 +37,23 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
           void addFiles(Array.from(e.dataTransfer.files));
         }}
         className={[
-          "relative flex flex-col items-center gap-5 rounded-md border border-dashed bg-surface-sunken px-6 py-14 text-center transition-colors duration-200",
-          isDragOver
-            ? "border-accent bg-accent/5"
-            : "border-hairline-strong hover:border-ink-soft",
+          "relative flex flex-col items-center gap-5 rounded-lg border border-dashed border-white/10 bg-paper px-6 py-14 text-center transition-colors duration-200",
+          isDragOver ? "border-accent bg-accent/10" : "",
         ].join(" ")}
       >
-        <PageStack />
+        <PdfIcon className="h-10 w-10 text-ink-soft" />
         <div className="flex flex-col gap-1.5">
-          <p className="font-display text-xl font-medium tracking-[-0.012em] text-ink">
+          <p className="font-sans text-xl font-medium text-ink">
             {isDragOver ? "Release to add" : "Drop PDFs here"}
           </p>
           <p className="text-sm text-muted">
             Up to 50&nbsp;MB combined · 2 or more files
           </p>
         </div>
-        <span
-          aria-hidden="true"
-          className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
-        >
-          — or —
-        </span>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="inline-flex h-10 items-center justify-center rounded-md border border-ink bg-transparent px-5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink transition-colors duration-200 hover:bg-ink hover:text-paper"
+          className="inline-flex h-10 items-center justify-center rounded-md border border-white/10 bg-transparent px-5 text-sm font-medium text-ink transition-colors duration-150 hover:border-white/20 hover:bg-white/5"
         >
           Browse files
         </button>
@@ -101,7 +76,7 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
         <div className="flex flex-col gap-2">
           <div
             aria-hidden="true"
-            className="h-1 w-full overflow-hidden rounded-full bg-hairline"
+            className="h-1 w-full overflow-hidden rounded-full bg-white/10"
           >
             <div
               className="h-full bg-accent transition-[width] duration-300"
@@ -110,7 +85,7 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
           </div>
           <div
             data-testid="running-total"
-            className="flex items-baseline justify-between font-mono text-[11px] text-muted"
+            className="flex items-baseline justify-between text-xs text-muted"
           >
             <span>Total</span>
             <span>

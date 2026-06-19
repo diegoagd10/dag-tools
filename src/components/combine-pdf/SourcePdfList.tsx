@@ -20,6 +20,15 @@ function formatIndex(index: number): string {
   return String(index + 1).padStart(2, "0");
 }
 
+function rowStateClassName(
+  isDragging: boolean,
+  isDropTarget: boolean,
+): string {
+  if (isDragging) return "border-accent opacity-50";
+  if (isDropTarget) return "ring-1 ring-accent";
+  return "hover:bg-surface-hover";
+}
+
 function GripIcon() {
   return (
     <svg
@@ -63,11 +72,11 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
       <div className="flex items-baseline justify-between">
         <h3
           id="source-list-heading"
-          className="font-display text-sm font-medium tracking-[-0.005em] text-ink-soft"
+          className="font-sans text-sm font-medium text-ink-soft"
         >
           Merge order
         </h3>
-        <span className="font-mono text-[11px] text-muted">
+        <span className="text-xs text-muted">
           {sourcePdfs.length} {sourcePdfs.length === 1 ? "file" : "files"}
         </span>
       </div>
@@ -102,13 +111,9 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
                 setOverIndex(null);
               }}
               className={classNames(
-                "group flex select-none items-center gap-4 rounded-md border bg-surface px-4 py-3 transition-all duration-150",
+                "group flex select-none items-center gap-4 rounded-md border border-transparent bg-surface px-4 py-3 transition-colors duration-150",
                 "cursor-grab active:cursor-grabbing",
-                isDragging
-                  ? "border-accent opacity-50 shadow-md"
-                  : isDropTarget
-                    ? "border-accent shadow-sm ring-1 ring-accent/30"
-                    : "border-hairline hover:border-ink-soft",
+                rowStateClassName(isDragging, isDropTarget),
                 rejection && "border-danger/50",
               )}
             >
@@ -118,7 +123,7 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
 
               <span
                 aria-hidden="true"
-                className="font-mono text-xs font-medium tabular-nums text-accent"
+                className="font-mono text-xs tabular-nums text-muted"
               >
                 {formatIndex(index)}
               </span>
@@ -126,7 +131,7 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm text-ink">{pdf.name}</span>
                 {!rejection && (
-                  <span className="font-mono text-[11px] tabular-nums text-muted">
+                  <span className="text-xs tabular-nums text-muted">
                     {pdf.pageCount} {pdf.pageCount === 1 ? "page" : "pages"} ·{" "}
                     {formatBytes(pdf.size)}
                   </span>
@@ -146,7 +151,7 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
                 onClick={() => removeSourcePdf(pdf.id)}
                 aria-label={`Remove ${pdf.name}`}
                 data-testid={`remove-${pdf.id}`}
-                className="shrink-0 rounded-sm px-2 py-1 font-mono text-[11px] text-muted underline-offset-4 transition-colors duration-150 hover:text-ink hover:underline"
+                className="shrink-0 rounded-sm px-2 py-1 text-xs text-muted underline-offset-4 transition-colors duration-150 hover:text-ink hover:underline"
               >
                 Remove
               </button>
