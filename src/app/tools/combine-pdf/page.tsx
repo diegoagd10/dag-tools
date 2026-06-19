@@ -32,7 +32,7 @@ export default function CombinePdfPage() {
     if (!canCombine || isCombining) return;
     setIsCombining(true);
     try {
-      const bytes = await merge(accepted, accepted.map((p) => p.id));
+      const bytes = await merge(accepted);
       const blob = new Blob([new Uint8Array(bytes)], {
         type: "application/pdf",
       });

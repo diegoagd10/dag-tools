@@ -19,17 +19,20 @@ export function buildCombinedPdfFilename(date = new Date()): string {
   return `${COMBINED_PDF_FILENAME_PREFIX}-${isoDate}.pdf`;
 }
 
+function formatUnit(value: number, unit: string): string {
+  const rounded = value >= 100 ? Math.round(value) : Number(value.toFixed(1));
+  return `${rounded} ${unit}`;
+}
+
 export function formatBytes(bytes: number): string {
   const megabyte = 1024 * 1024;
   const kilobyte = 1024;
 
   if (bytes >= megabyte) {
-    const value = bytes / megabyte;
-    return `${value >= 100 ? Math.round(value) : Number(value.toFixed(1))} MB`;
+    return formatUnit(bytes / megabyte, "MB");
   }
   if (bytes >= kilobyte) {
-    const value = bytes / kilobyte;
-    return `${value >= 100 ? Math.round(value) : Number(value.toFixed(1))} KB`;
+    return formatUnit(bytes / kilobyte, "KB");
   }
   return `${bytes} B`;
 }

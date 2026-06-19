@@ -26,7 +26,7 @@ describe("merge", () => {
     const a = await makeSourcePdf(resolve(fixtures, "sample-1.pdf"), "a");
     const b = await makeSourcePdf(resolve(fixtures, "sample-2.pdf"), "b");
 
-    const bytes = await merge([a, b], ["a", "b"]);
+    const bytes = await merge([a, b]);
     const combined = await PDFDocument.load(bytes);
 
     expect(combined.getPageCount()).toBe(3);

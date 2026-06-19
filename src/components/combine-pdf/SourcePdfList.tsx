@@ -8,6 +8,10 @@ interface SourcePdfListProps {
   rejectionByPdfId: Map<string, PerFileRejectionReason>;
 }
 
+function classNames(...classes: (string | false | undefined)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
 export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
   const sourcePdfs = useCombinePdfStore((s) => s.sourcePdfs);
   const removeSourcePdf = useCombinePdfStore((s) => s.removeSourcePdf);
@@ -55,13 +59,14 @@ export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
               setDragIndex(null);
               setOverIndex(null);
             }}
-            className={[
+            className={classNames(
               "flex items-start justify-between gap-4 rounded-md border px-4 py-2 transition-colors",
               "cursor-grab active:cursor-grabbing dark:border-zinc-800",
-              isDragging ? "border-blue-500 opacity-40" : "border-zinc-200",
-              isDropTarget ? "border-t-4 border-t-blue-500 border-blue-500" : "",
-              rejection ? "border-red-300 dark:border-red-800" : "",
-            ].join(" ")}
+              isDragging && "border-blue-500 opacity-40",
+              !isDragging && !rejection && "border-zinc-200",
+              isDropTarget && "border-t-4 border-t-blue-500 border-blue-500",
+              rejection && "border-red-300 dark:border-red-800",
+            )}
           >
             <div className="flex min-w-0 flex-col gap-1">
               <span className="truncate">{pdf.name}</span>

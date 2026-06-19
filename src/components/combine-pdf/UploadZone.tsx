@@ -12,10 +12,6 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
   const addFiles = useCombinePdfStore((s) => s.addFiles);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleFiles(files: FileList | File[]) {
-    await addFiles(Array.from(files));
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -23,7 +19,7 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          void handleFiles(e.dataTransfer.files);
+          void addFiles(Array.from(e.dataTransfer.files));
         }}
         className="flex flex-col items-center gap-4 rounded-lg border-2 border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700"
       >
@@ -45,7 +41,7 @@ export function UploadZone({ runningTotalBytes }: UploadZoneProps) {
           data-testid="pdf-file-input"
           className="hidden"
           onChange={(e) => {
-            if (e.target.files) void handleFiles(e.target.files);
+            if (e.target.files) void addFiles(Array.from(e.target.files));
             e.target.value = "";
           }}
         />

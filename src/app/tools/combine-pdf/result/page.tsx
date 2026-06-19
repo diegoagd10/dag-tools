@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
 import { formatBytes } from "@/lib/combine-pdf/constants";
 
@@ -11,10 +11,15 @@ export default function CombinePdfResultPage() {
   const combinedPdf = useCombinePdfStore((s) => s.combinedPdf);
   const reset = useCombinePdfStore((s) => s.reset);
   const downloadUrl = useMemo(
-    () =>
-      combinedPdf ? URL.createObjectURL(combinedPdf.blob) : null,
+    () => (combinedPdf ? URL.createObjectURL(combinedPdf.blob) : null),
     [combinedPdf],
   );
+
+  useEffect(() => {
+    return () => {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    };
+  }, [downloadUrl]);
 
   if (!combinedPdf) {
     return (
