@@ -1,4 +1,4 @@
-import type { RejectionReason } from "./types";
+import type { RejectionReason, CombinedPdf } from "./types";
 
 export const MIN_SOURCE_PDF_COUNT = 2;
 
@@ -17,6 +17,20 @@ export const REJECTION_MESSAGES: Record<PerFileRejectionReason, string> = {
 export function buildCombinedPdfFilename(date = new Date()): string {
   const isoDate = date.toISOString().slice(0, 10);
   return `${COMBINED_PDF_FILENAME_PREFIX}-${isoDate}.pdf`;
+}
+
+export function createCombinedPdf(
+  blob: Blob,
+  filename: string,
+  pageCount: number,
+): CombinedPdf {
+  return {
+    blob,
+    url: URL.createObjectURL(blob),
+    filename,
+    size: blob.size,
+    pageCount,
+  };
 }
 
 function formatUnit(value: number, unit: string): string {
