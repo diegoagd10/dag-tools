@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app";
 import { openDatabase } from "./db";
@@ -7,7 +8,7 @@ const port = Number(process.env.PORT ?? 3001);
 const dbPath = process.env.DB_PATH ?? "./data/dag-tools.db";
 const storageDir = process.env.STORAGE_DIR ?? "./storage";
 
-mkdirSync("./data", { recursive: true });
+mkdirSync(dirname(dbPath), { recursive: true });
 mkdirSync(storageDir, { recursive: true });
 
 const db = openDatabase(dbPath);
