@@ -86,3 +86,30 @@ test("reordering Source PDFs changes the Combined PDF page order", async ({
   expect(firstPage.getHeight()).toBe(595);
   expect(combined.getPageCount()).toBe(3);
 });
+
+test("a non-PDF is rejected inline and keeps the Combine button disabled", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("open-combine-pdf").click();
+  await page.waitForURL("**/tools/combine-pdf");
+
+  await page.getByTestId("pdf-file-input").setInputFiles([
+    fixtures("sample-1.pdf"),
+    fixtures("not-a-pdf.txt"),
+  ]);
+
+  const rows = page.getByTestId("source-pdf-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("sample-1.pdf");
+  await expect(rows.nth(1)).toContainText("not-a-pdf.txt");
+
+  await expect(
+    page.getByText("This file is not a valid PDF"),
+  ).toBeVisible();
+
+  await expect(page.getByTestId("running-total")).toContainText("/ 50 MB");
+
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
+});

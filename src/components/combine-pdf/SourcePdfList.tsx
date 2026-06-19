@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useCombinePdfStore } from "@/lib/combine-pdf/store";
+import { REJECTION_MESSAGES, type PerFileRejectionReason } from "@/lib/combine-pdf/constants";
 
-export function SourcePdfList() {
+interface SourcePdfListProps {
+  rejectionByPdfId: Map<string, PerFileRejectionReason>;
+}
+
+export function SourcePdfList({ rejectionByPdfId }: SourcePdfListProps) {
   const sourcePdfs = useCombinePdfStore((s) => s.sourcePdfs);
   const removeSourcePdf = useCombinePdfStore((s) => s.removeSourcePdf);
   const reorder = useCombinePdfStore((s) => s.reorder);
@@ -26,6 +31,7 @@ export function SourcePdfList() {
         const isDragging = dragIndex === index;
         const isDropTarget =
           overIndex === index && dragIndex !== null && !isDragging;
+        const rejection = rejectionByPdfId.get(pdf.id);
 
         return (
           <li
@@ -50,23 +56,30 @@ export function SourcePdfList() {
               setOverIndex(null);
             }}
             className={[
-              "flex items-center justify-between rounded-md border px-4 py-2 transition-colors",
+              "flex items-start justify-between gap-4 rounded-md border px-4 py-2 transition-colors",
               "cursor-grab active:cursor-grabbing dark:border-zinc-800",
-              isDragging
-                ? "border-blue-500 opacity-40"
-                : "border-zinc-200",
-              isDropTarget
-                ? "border-t-4 border-t-blue-500 border-blue-500"
-                : "",
+              isDragging ? "border-blue-500 opacity-40" : "border-zinc-200",
+              isDropTarget ? "border-t-4 border-t-blue-500 border-blue-500" : "",
+              rejection ? "border-red-300 dark:border-red-800" : "",
             ].join(" ")}
           >
-            <span className="truncate">{pdf.name}</span>
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="truncate">{pdf.name}</span>
+              {rejection && (
+                <span
+                  data-testid={`rejection-${pdf.id}`}
+                  className="text-sm text-red-600 dark:text-red-400"
+                >
+                  {REJECTION_MESSAGES[rejection]}
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => removeSourcePdf(pdf.id)}
               aria-label={`Remove ${pdf.name}`}
               data-testid={`remove-${pdf.id}`}
-              className="text-sm text-zinc-500 underline hover:text-zinc-900 dark:hover:text-zinc-100"
+              className="shrink-0 text-sm text-zinc-500 underline hover:text-zinc-900 dark:hover:text-zinc-100"
             >
               Remove
             </button>

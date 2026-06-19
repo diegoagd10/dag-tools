@@ -8,7 +8,14 @@ import type { SourcePdf } from "@/lib/combine-pdf/types";
 async function makeSourcePdf(path: string, id: string): Promise<SourcePdf> {
   const buffer = await readFile(path);
   const file = new File([buffer], `${id}.pdf`, { type: "application/pdf" });
-  return { id, file, name: file.name, size: buffer.length };
+  return {
+    id,
+    file,
+    name: file.name,
+    size: buffer.length,
+    isPdf: true,
+    encrypted: false,
+  };
 }
 
 describe("merge", () => {

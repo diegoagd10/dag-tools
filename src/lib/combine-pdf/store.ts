@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import type { CombinedPdf, SourcePdf } from "./types";
+import { analyzeFile } from "./detect";
 
 interface CombinePdfState {
   sourcePdfs: SourcePdf[];
   combinedPdf: CombinedPdf | null;
-  addFiles: (files: File[]) => void;
+  addFiles: (files: File[]) => Promise<void>;
   removeSourcePdf: (id: string) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
   setCombinedPdf: (combined: CombinedPdf | null) => void;
@@ -13,18 +14,22 @@ interface CombinePdfState {
 export const useCombinePdfStore = create<CombinePdfState>((set) => ({
   sourcePdfs: [],
   combinedPdf: null,
-  addFiles: (files) =>
-    set((state) => ({
-      sourcePdfs: [
-        ...state.sourcePdfs,
-        ...files.map((file) => ({
+  addFiles: async (files) => {
+    const analyzed: SourcePdf[] = await Promise.all(
+      files.map(async (file) => {
+        const { isPdf, encrypted } = await analyzeFile(file);
+        return {
           id: crypto.randomUUID(),
           file,
           name: file.name,
           size: file.size,
-        })),
-      ],
-    })),
+          isPdf,
+          encrypted,
+        };
+      }),
+    );
+    set((state) => ({ sourcePdfs: [...state.sourcePdfs, ...analyzed] }));
+  },
   removeSourcePdf: (id) =>
     set((state) => ({
       sourcePdfs: state.sourcePdfs.filter((pdf) => pdf.id !== id),

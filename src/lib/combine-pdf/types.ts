@@ -9,11 +9,13 @@ export interface SourcePdf {
   file: File;
   name: string;
   size: number;
+  isPdf: boolean;
+  encrypted: boolean;
 }
 
 export interface RejectedFile {
   reason: RejectionReason;
-  file?: File;
+  id?: string;
   name?: string;
 }
 
