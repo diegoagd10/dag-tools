@@ -81,3 +81,46 @@ test("Split again resets the store and returns to an empty tool page", async ({
   await expect(page.getByTestId("source-pdf-info")).toHaveCount(0);
   await expect(page.getByTestId("split-button")).toBeDisabled();
 });
+
+test("a non-PDF is rejected inline and keeps the Split button disabled", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("open-split-pdf").click();
+  await page.waitForURL("**/tools/split-pdf");
+
+  await page
+    .getByTestId("split-pdf-file-input")
+    .setInputFiles(fixtures("not-a-pdf.txt"));
+
+  await expect(page.getByTestId("source-filename")).toHaveText(
+    "not-a-pdf.txt",
+  );
+  await expect(page.getByTestId("rejection-message")).toHaveText(
+    "This file is not a valid PDF",
+  );
+  await expect(page.getByTestId("split-button")).toBeDisabled();
+});
+
+test("replacing a rejected upload with a valid PDF clears the rejection and enables Split", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("open-split-pdf").click();
+  await page.waitForURL("**/tools/split-pdf");
+
+  await page
+    .getByTestId("split-pdf-file-input")
+    .setInputFiles(fixtures("not-a-pdf.txt"));
+
+  await expect(page.getByTestId("rejection-message")).toBeVisible();
+  await expect(page.getByTestId("split-button")).toBeDisabled();
+
+  await page
+    .getByTestId("split-pdf-file-input")
+    .setInputFiles(fixtures("sample-multi-page.pdf"));
+
+  await expect(page.getByTestId("rejection-message")).toHaveCount(0);
+  await expect(page.getByTestId("running-size")).toContainText("/ 50 MB");
+  await expect(page.getByTestId("split-button")).toBeEnabled();
+});

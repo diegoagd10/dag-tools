@@ -6,7 +6,13 @@ import Link from "next/link";
 import { useSplitPdfStore } from "@/lib/split-pdf/store";
 import { validate } from "@/lib/split-pdf/validate";
 import { split } from "@/lib/split-pdf/split";
-import { formatBytes, buildSplitZipFilename, createSplitResult } from "@/lib/split-pdf/constants";
+import {
+  formatBytes,
+  buildSplitZipFilename,
+  createSplitResult,
+  REJECTION_MESSAGES,
+  SOURCE_PDF_SIZE_LIMIT_BYTES,
+} from "@/lib/split-pdf/constants";
 
 function PageStack() {
   return (
@@ -35,7 +41,10 @@ export default function SplitPdfPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
 
-  const { accepted } = validate(sourcePdf);
+  const { accepted, reason } = validate(sourcePdf);
+  const sizeRatio = sourcePdf
+    ? Math.min(sourcePdf.size / SOURCE_PDF_SIZE_LIMIT_BYTES, 1)
+    : 0;
 
   async function handleFiles(files: FileList | File[]) {
     const file = Array.from(files)[0];
@@ -177,6 +186,38 @@ export default function SplitPdfPage() {
                   {formatBytes(sourcePdf.size)}
                 </span>
               </span>
+              {reason && (
+                <span
+                  data-testid="rejection-message"
+                  className="text-xs text-danger"
+                >
+                  {REJECTION_MESSAGES[reason]}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {accepted && sourcePdf && (
+          <div className="flex flex-col gap-2">
+            <div
+              aria-hidden="true"
+              className="h-1 w-full overflow-hidden rounded-full bg-hairline"
+            >
+              <div
+                className="h-full bg-accent transition-[width] duration-300"
+                style={{ width: `${sizeRatio * 100}%` }}
+              />
+            </div>
+            <div
+              data-testid="running-size"
+              className="flex items-baseline justify-between font-mono text-[11px] text-muted"
+            >
+              <span>Size</span>
+              <span>
+                {formatBytes(sourcePdf.size)} /{" "}
+                {formatBytes(SOURCE_PDF_SIZE_LIMIT_BYTES)}
+              </span>
             </div>
           </div>
         )}
@@ -204,7 +245,7 @@ export default function SplitPdfPage() {
             →
           </span>
         </button>
-        {!accepted && !isSplitting && (
+        {!sourcePdf && !isSplitting && (
           <p
             className="font-mono text-[11px] text-muted"
             data-testid="split-hint"

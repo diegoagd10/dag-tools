@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validate } from "@/lib/split-pdf/validate";
+import { SOURCE_PDF_SIZE_LIMIT_BYTES } from "@/lib/split-pdf/constants";
 import type { SourcePdf } from "@/lib/split-pdf/types";
 
 function makeSourcePdf(
@@ -30,5 +31,31 @@ describe("validate", () => {
 
   it("rejects with no reason when no Source PDF has been loaded", () => {
     expect(validate(null)).toEqual({ accepted: false, reason: null });
+  });
+
+  it("rejects a non-PDF with reason 'not-a-pdf'", () => {
+    expect(validate(makeSourcePdf({ isPdf: false }))).toEqual({
+      accepted: false,
+      reason: "not-a-pdf",
+    });
+  });
+
+  it("rejects an encrypted PDF with reason 'encrypted'", () => {
+    expect(validate(makeSourcePdf({ encrypted: true }))).toEqual({
+      accepted: false,
+      reason: "encrypted",
+    });
+  });
+
+  it("rejects a PDF over the size limit with reason 'oversize'", () => {
+    expect(
+      validate(makeSourcePdf({ size: SOURCE_PDF_SIZE_LIMIT_BYTES + 1 })),
+    ).toEqual({ accepted: false, reason: "oversize" });
+  });
+
+  it("accepts a PDF that is exactly at the size limit", () => {
+    expect(
+      validate(makeSourcePdf({ size: SOURCE_PDF_SIZE_LIMIT_BYTES })),
+    ).toEqual({ accepted: true, reason: null });
   });
 });
