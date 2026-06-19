@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sandcastle:build": "sandcastle docker build-image",
+    "loop": "pnpm dlx tsx .sandcastle/main.mts"
   },
   "dependencies": {
     "next": "16.2.9",
