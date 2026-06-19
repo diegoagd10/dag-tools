@@ -9,6 +9,7 @@ interface CombinePdfState {
   removeSourcePdf: (id: string) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
   setCombinedPdf: (combined: CombinedPdf | null) => void;
+  reset: () => void;
 }
 
 export const useCombinePdfStore = create<CombinePdfState>((set) => ({
@@ -17,7 +18,7 @@ export const useCombinePdfStore = create<CombinePdfState>((set) => ({
   addFiles: async (files) => {
     const analyzed: SourcePdf[] = await Promise.all(
       files.map(async (file) => {
-        const { isPdf, encrypted } = await analyzeFile(file);
+        const { isPdf, encrypted, pageCount } = await analyzeFile(file);
         return {
           id: crypto.randomUUID(),
           file,
@@ -25,6 +26,7 @@ export const useCombinePdfStore = create<CombinePdfState>((set) => ({
           size: file.size,
           isPdf,
           encrypted,
+          pageCount,
         };
       }),
     );
@@ -51,4 +53,5 @@ export const useCombinePdfStore = create<CombinePdfState>((set) => ({
       return { sourcePdfs: next };
     }),
   setCombinedPdf: (combined) => set({ combinedPdf: combined }),
+  reset: () => set({ sourcePdfs: [], combinedPdf: null }),
 }));

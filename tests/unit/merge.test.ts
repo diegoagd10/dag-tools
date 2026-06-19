@@ -8,6 +8,7 @@ import type { SourcePdf } from "@/lib/combine-pdf/types";
 async function makeSourcePdf(path: string, id: string): Promise<SourcePdf> {
   const buffer = await readFile(path);
   const file = new File([buffer], `${id}.pdf`, { type: "application/pdf" });
+  const doc = await PDFDocument.load(buffer);
   return {
     id,
     file,
@@ -15,6 +16,7 @@ async function makeSourcePdf(path: string, id: string): Promise<SourcePdf> {
     size: buffer.length,
     isPdf: true,
     encrypted: false,
+    pageCount: doc.getPageCount(),
   };
 }
 

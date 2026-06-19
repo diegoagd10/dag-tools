@@ -7,7 +7,7 @@ function makeSourcePdf(
   id: string,
   name: string,
   size: number,
-  opts: { isPdf?: boolean; encrypted?: boolean } = {},
+  opts: { isPdf?: boolean; encrypted?: boolean; pageCount?: number } = {},
 ): SourcePdf {
   return {
     id,
@@ -16,6 +16,7 @@ function makeSourcePdf(
     size,
     isPdf: opts.isPdf ?? true,
     encrypted: opts.encrypted ?? false,
+    pageCount: opts.pageCount ?? 1,
   };
 }
 

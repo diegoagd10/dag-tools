@@ -113,3 +113,30 @@ test("a non-PDF is rejected inline and keeps the Combine button disabled", async
   await expect(page.getByTestId("combine-button")).toBeDisabled();
   await expect(page.getByTestId("combine-hint")).toBeVisible();
 });
+
+test("Combine more resets the store and returns to an empty tool page", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("open-combine-pdf").click();
+  await page.waitForURL("**/tools/combine-pdf");
+
+  await page
+    .getByTestId("pdf-file-input")
+    .setInputFiles([fixtures("sample-1.pdf"), fixtures("sample-2.pdf")]);
+
+  await page.getByTestId("combine-button").click();
+  await page.waitForURL("**/tools/combine-pdf/result");
+
+  await expect(page.getByTestId("combined-filename")).toContainText(
+    "combined-",
+  );
+  await expect(page.getByTestId("combined-filename")).toContainText(".pdf");
+  await expect(page.getByTestId("combined-page-count")).toHaveText("3 pages");
+
+  await page.getByTestId("combine-more-button").click();
+  await page.waitForURL("**/tools/combine-pdf");
+
+  await expect(page.getByTestId("source-pdf-row")).toHaveCount(0);
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+});

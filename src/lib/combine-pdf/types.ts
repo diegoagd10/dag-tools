@@ -11,6 +11,7 @@ export interface SourcePdf {
   size: number;
   isPdf: boolean;
   encrypted: boolean;
+  pageCount: number;
 }
 
 export interface RejectedFile {
@@ -27,4 +28,6 @@ export interface ValidationResult {
 export interface CombinedPdf {
   blob: Blob;
   filename: string;
+  size: number;
+  pageCount: number;
 }

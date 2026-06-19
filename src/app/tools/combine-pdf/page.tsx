@@ -36,7 +36,13 @@ export default function CombinePdfPage() {
       const blob = new Blob([new Uint8Array(bytes)], {
         type: "application/pdf",
       });
-      setCombinedPdf({ blob, filename: buildCombinedPdfFilename() });
+      const pageCount = accepted.reduce((sum, pdf) => sum + pdf.pageCount, 0);
+      setCombinedPdf({
+        blob,
+        filename: buildCombinedPdfFilename(),
+        size: blob.size,
+        pageCount,
+      });
       router.push("/tools/combine-pdf/result");
     } finally {
       setIsCombining(false);
