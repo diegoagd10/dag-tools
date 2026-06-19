@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { UploadZone } from "@/components/combine-pdf/UploadZone";
 import { SourcePdfList } from "@/components/combine-pdf/SourcePdfList";
@@ -37,13 +38,9 @@ export default function CombinePdfPage() {
     setIsCombining(true);
     try {
       const bytes = await merge(accepted);
-      const blob = new Blob([new Uint8Array(bytes)], {
-        type: "application/pdf",
-      });
+      const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
       const pageCount = accepted.reduce((sum, pdf) => sum + pdf.pageCount, 0);
-      setCombinedPdf(
-        createCombinedPdf(blob, buildCombinedPdfFilename(), pageCount),
-      );
+      setCombinedPdf(createCombinedPdf(blob, buildCombinedPdfFilename(), pageCount));
       router.push("/tools/combine-pdf/result");
     } finally {
       setIsCombining(false);
@@ -51,22 +48,71 @@ export default function CombinePdfPage() {
   }
 
   return (
-    <main className="flex w-full max-w-2xl flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Combine PDFs</h1>
-      <UploadZone runningTotalBytes={runningTotalBytes} />
-      <SourcePdfList rejectionByPdfId={rejectionByPdfId} />
-      <div className="flex flex-col gap-2">
+    <main className="mx-auto flex w-full max-w-2xl flex-col px-6 pt-8 pb-24 sm:pt-10">
+      <nav className="mb-10">
+        <Link
+          href="/"
+          className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-ink"
+        >
+          <span
+            aria-hidden="true"
+            className="transition-transform duration-200 group-hover:-translate-x-0.5"
+          >
+            ←
+          </span>
+          Back to catalog
+        </Link>
+      </nav>
+
+      <header className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-xs font-medium text-accent">01</span>
+          <span aria-hidden="true" className="h-3 w-px bg-hairline" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+            Combine · PDF
+          </span>
+        </div>
+        <h1 className="font-display text-4xl font-medium leading-[1.04] tracking-[-0.028em] text-ink sm:text-5xl">
+          Combine your <em className="font-display italic text-accent">PDFs</em>.
+        </h1>
+        <p className="max-w-md text-sm leading-relaxed text-ink-soft">
+          Add two or more PDFs, drag the rows to set the merge order, then
+          combine. Everything runs locally in your browser.
+        </p>
+      </header>
+
+      <section className="mt-10 flex flex-col gap-8 rounded-lg border border-hairline bg-surface-raised p-6 shadow-sm sm:p-8">
+        <UploadZone runningTotalBytes={runningTotalBytes} />
+        <SourcePdfList rejectionByPdfId={rejectionByPdfId} />
+      </section>
+
+      <div className="mt-8 flex flex-col gap-3">
         <button
           type="button"
           onClick={handleCombine}
           disabled={!canCombine || isCombining}
           data-testid="combine-button"
-          className="h-12 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#ccc]"
+          className="group inline-flex h-14 items-center justify-between gap-3 rounded-md bg-accent px-6 font-mono text-xs uppercase tracking-[0.14em] text-accent-ink shadow-sm transition-all duration-200 hover:bg-accent-soft hover:shadow-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent disabled:hover:shadow-sm"
         >
-          {isCombining ? "Combining..." : "Combine"}
+          <span className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="inline-block h-2 w-2 rounded-full bg-accent-ink"
+            />
+            {isCombining ? "Combining…" : "Combine files"}
+          </span>
+          <span
+            aria-hidden="true"
+            className="transition-transform duration-200 group-hover:translate-x-1 group-disabled:translate-x-0"
+          >
+            →
+          </span>
         </button>
         {!canCombine && !isCombining && (
-          <p className="text-sm text-zinc-500" data-testid="combine-hint">
+          <p
+            className="font-mono text-[11px] text-muted"
+            data-testid="combine-hint"
+          >
             Add at least {MIN_SOURCE_PDF_COUNT} PDFs to combine.
           </p>
         )}
