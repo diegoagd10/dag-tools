@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { analyzeFile } from "@/lib/combine-pdf/detect";
+import { analyzeFile } from "@/lib/pdf-tools/detect";
 
 async function fileFrom(path: string, name: string): Promise<File> {
   const buffer = await readFile(path);
@@ -21,5 +21,19 @@ describe("analyzeFile", () => {
     const analysis = await analyzeFile(await fileFrom(path, "not-a-pdf.txt"));
 
     expect(analysis).toEqual({ isPdf: false, encrypted: false, pageCount: 0 });
+  });
+
+  it("reports the page count of a multi-page PDF", async () => {
+    const path = resolve(
+      process.cwd(),
+      "tests",
+      "fixtures",
+      "sample-multi-page.pdf",
+    );
+    const analysis = await analyzeFile(
+      await fileFrom(path, "sample-multi-page.pdf"),
+    );
+
+    expect(analysis).toEqual({ isPdf: true, encrypted: false, pageCount: 3 });
   });
 });

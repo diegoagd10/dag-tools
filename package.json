@@ -14,6 +14,7 @@
     "loop": "pnpm dlx tsx .sandcastle/main.mts"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
     "next": "16.2.9",
     "pdf-lib": "^1.17.1",
     "react": "19.2.4",

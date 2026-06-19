@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CombinedPdf, SourcePdf } from "./types";
-import { analyzeFile } from "./detect";
+import { analyzeFile } from "@/lib/pdf-tools/detect";
 
 function revokePreviousUrl(prev: CombinedPdf | null, nextUrl?: string) {
   if (prev && prev.url !== nextUrl) {
