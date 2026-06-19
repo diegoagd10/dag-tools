@@ -39,6 +39,13 @@ Pick the highest-priority open issue that is not blocked by another open issue.
    - Note any blockers for the next iteration
 6. **Close** — close the issue with `gh issue close <ID> --comment "Completed by Sandcastle"` explaining what was done.
 
+## Skills
+
+Use the following skills while working on the feature:
+
+1. **tdd** - Mandatory before writing any code.
+2. **frontend-design** - Mandatory if you are going to work on the UI. 
+
 ## Rules
 
 - Work on **one issue per iteration**. Do not attempt multiple issues in a single iteration.
