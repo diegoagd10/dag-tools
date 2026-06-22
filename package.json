@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:api": "tsx src/server/index.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -15,9 +14,6 @@
     "loop": "pnpm dlx tsx .sandcastle/main.mts"
   },
   "dependencies": {
-    "@hono/node-server": "^2.0.5",
-    "better-sqlite3": "^12.11.1",
-    "hono": "^4.12.26",
     "jszip": "^3.10.1",
     "next": "16.2.9",
     "pdf-lib": "^1.17.1",
@@ -29,14 +25,12 @@
     "@ai-hero/sandcastle": "^0.10.0",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.9"
   }

@@ -17,9 +17,8 @@
 // execution with a planning phase).
 //
 // Usage:
-//   npx tsx .sandcastle/main.mts
-// Or add to package.json:
-//   "scripts": { "sandcastle": "npx tsx .sandcastle/main.mts" }
+//   pnpm dlx tsx .sandcastle/main.mts
+// (wired up in package.json as `pnpm run loop`)
 
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
@@ -33,13 +32,15 @@ import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 const MAX_ITERATIONS = 10;
 
 // Hooks run inside the sandbox before the agent starts each iteration.
-// npm install ensures the sandbox always has fresh dependencies.
+// `pnpm install --frozen-lockfile` ensures the sandbox always has fresh
+// dependencies that match pnpm-lock.yaml exactly — no lockfile drift, no
+// accidental npm-tree fallback.
 const hooks = {
-  sandbox: { onSandboxReady: [{ command: "npm install" }] },
+  sandbox: { onSandboxReady: [{ command: "pnpm install --frozen-lockfile" }] },
 };
 
 // Copy node_modules from the host into the worktree before each sandbox
-// starts. Avoids a full npm install from scratch; the hook above handles
+// starts. Avoids a full pnpm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ["node_modules"];
 
@@ -62,6 +63,14 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         {
           hostPath: "~/.local/share/opencode/auth.json",
           sandboxPath: "~/.local/share/opencode/auth.json",
+          readonly: true,
+        },
+        // Mirror ~/.claude so agent toolchains that auto-discover skills from
+        // ~/.claude/skills/ resolve. ~/.agents is mounted next; together they
+        // cover both skill namespaces.
+        {
+          hostPath: "~/.claude",
+          sandboxPath: "~/.claude",
           readonly: true,
         },
         {
@@ -98,11 +107,17 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // branch, then hands it to the reviewer. A higher value lets the agent
     // drain the whole backlog onto this one branch in a single pass, which
     // defeats the per-issue review.
+    // BRANCH is passed to BOTH phases so they share an explicit, timestamped
+    // name. The implementer must commit on this exact branch (not a sub-branch
+    // or scratch branch) so the reviewer's diff target resolves.
     const implement = await sandbox.run({
       name: "implementer",
       maxIterations: 1,
       agent: sandcastle.opencode("opencode-go/glm-5.2"),
       promptFile: "./.sandcastle/implement-prompt.md",
+      promptArgs: {
+        BRANCH: branch,
+      },
     });
 
     if (!implement.commits.length) {
