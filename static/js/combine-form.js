@@ -148,9 +148,9 @@
       totalEl.textContent = formatBytes(runningTotal) + " / 50 MB";
     }
 
-    // Enable/disable Combine button
+    // Enable/disable Combine button — disabled if any invalid row exists
     var combineBtn = document.getElementById("combine-btn");
-    var canCombine = validCount >= MIN_SOURCE_PDF_COUNT;
+    var canCombine = validCount >= MIN_SOURCE_PDF_COUNT && rejections.length === 0;
     if (combineBtn) {
       combineBtn.disabled = !canCombine;
     }

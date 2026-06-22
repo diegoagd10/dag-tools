@@ -22,6 +22,7 @@ export const PdfCombine = () => {
         hx-swap="outerHTML"
         hx-encoding="multipart/form-data"
         hx-indicator="#combine-indicator"
+        hx-on--before-swap="if(event.detail.xhr.status === 422) event.detail.shouldSwap = true"
         class="mt-8 flex w-full max-w-xl flex-col gap-4"
       >
         <div id="source-rows" data-testid="source-rows" class="flex flex-col gap-3">
