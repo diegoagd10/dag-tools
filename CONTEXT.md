@@ -57,8 +57,12 @@ The text string encoded into a QR Code by the QR Code Tool. May be a URL or plai
 _Avoid_: URL, text, payload, input, query
 
 **QR Code** *[planned]*:
-The visual representation of the encoded QR Content. What the user sees rendered when the Share Link is opened. Encoding happens **server-side**: the backend emits the QR as inline SVG embedded in the Share Link page. No browser JS is involved (consistent with Server-Side Processing).
+The visual representation of the encoded QR Content. What the user sees when the Share Link is opened. Encoding happens **server-side**: a dedicated QR Image Endpoint renders the QR Content to a PNG, and the Share Link page embeds it via an `<img>` element so the browser's native right-click "Save image as" works. No browser JS is involved in rendering (consistent with Server-Side Processing).
 _Avoid_: QR image, output image, barcode
+
+**QR Image Endpoint** *[planned]*:
+The server route that renders the QR Content for a given Share ID to a PNG (`Content-Type: image/png`) and is used as the `src` of the `<img>` on the Share Link page. Enables native browser image download. Route `GET /links/qr/:id.png`.
+_Avoid_: QR url, image route
 
 **Share Link**:
 A URL of the form `/<group>/<tool>/:id` that, when opened, fetches the corresponding Artifact from the backend. The Share ID is the only authorization — anyone with the link has access. Examples: `/pdf/combine/:id`, `/pdf/split/:id`, `/links/qr/:id` (planned).
@@ -69,7 +73,7 @@ The opaque string identifier of an Artifact. Generated when the Tool is invoked 
 _Avoid_: token, slug, short code
 
 **QR Code Tool** *[planned]*:
-A Link Tool that encodes a QR Content into a QR Code and produces a Share Link for distribution. Form at `/links/qr`, API at `POST /api/v1/links/qr`, Share Link at `/links/qr/:id`. The Share Link page is rendered server-side: the backend reads the QR Content and embeds the QR Code as inline SVG in the page.
+A Link Tool that encodes a QR Content into a QR Code and produces a Share Link for distribution. Form at `/links/qr`, API at `POST /api/v1/links/qr`, Share Link at `/links/qr/:id`. The Share Link page is rendered server-side: the backend reads the QR Content and embeds the QR Code via an `<img>` pointing at the QR Image Endpoint (`/links/qr/:id.png`).
 _Avoid_: QR generator, QR maker, QR tool
 
 **Server-Side Processing**:
@@ -88,6 +92,8 @@ _Avoid_: cloud processing, remote processing
 
 **Password-Protected Source PDFs**: Rejected at upload time with an inline message. Not supported in the current scope.
 
+**QR Content Limits**: QR Content is trimmed of surrounding whitespace on **both** frontend and backend — the backend never relies on the frontend having trimmed. Empty-after-trim is rejected (the frontend disables the submit control; the backend rejects independently). Maximum length is **2048 bytes** (UTF-8); over-limit is rejected on both frontend and backend.
+
 **No TTL (Artifacts live forever)**: Artifacts do not expire. The `expires_at` column on `artifacts` is reserved for a future TTL feature (design seam) — populated as `NULL` for now.
 
 **No Auth (Open Share Links)**: The Share ID is the only authorization. There is no user account system; anyone with a Share Link has access. The `creator_token` column on `artifacts` is reserved for a future auth feature (design seam) — populated as `NULL` for now.
@@ -98,8 +104,8 @@ _Avoid_: cloud processing, remote processing
 
 **Output Filename (Split)**: `split-{YYYY-MM-DD}.zip` — e.g., `split-2026-06-19.zip`. Each Split PDF inside the archive is named `page-NNN.pdf` (zero-padded 3 digits) — e.g., `page-001.pdf`, `page-002.pdf`.
 
-**API Response Shape**: Every successful Tool API call returns JSON: `{ id, url, filename, size, mimeType, createdAt, pageCount? }`. `pageCount` is included for PDF Tools; omitted for QR (planned).
+**API Response Shape**: File Tool API calls return JSON: `{ id, url, filename, size, mimeType, createdAt, pageCount? }` — `pageCount` is included for PDF Tools. Link Tools (QR, planned) correspond to a lean shape `{ id, url, createdAt }`, where `url` is the Share Link; `filename`/`size`/`mimeType`/`pageCount` are omitted because nothing is rendered to a file at creation (the PNG is produced on-demand by the QR Image Endpoint). As with File Tools, the success response is surfaced as a rendered HTML Share Link panel (htmx fragment), not raw JSON.
 
 **404 on Missing Artifact**: When a Share Link is opened with an unknown `:id`, the server returns 404. The frontend renders a "this artifact is not available" message and a link back to the relevant form page.
 
-**File Serve**: File Tool Share Links (`/pdf/combine/:id`, `/pdf/split/:id`) serve the binary file directly with `Content-Disposition: attachment`. The browser handles download or inline view based on user preference. The Link Tool Share Link (`/links/qr/:id`, planned) renders an HTML page with the client-side-rendered QR Code.
+**File Serve**: File Tool Share Links (`/pdf/combine/:id`, `/pdf/split/:id`) serve the binary file directly with `Content-Disposition: attachment`. The browser handles download or inline view based on user preference. The Link Tool Share Link (`/links/qr/:id`, planned) renders an HTML page that embeds the QR Code via `<img src="/links/qr/:id.png">`, served by the server-side QR Image Endpoint (no browser JS in rendering). Native right-click "Save image as" downloads the PNG.
