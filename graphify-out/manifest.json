@@ -1,0 +1,297 @@
+{
+  "/home/diegoagd10/Projects/dag-tools/eslint.config.mjs": {
+    "mtime": 1781871015.2773273,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "/home/diegoagd10/Projects/dag-tools/next.config.ts": {
+    "mtime": 1781871015.2773204,
+    "ast_hash": "9b77af189a21a7a64e4bd7a426f64176",
+    "semantic_hash": "9b77af189a21a7a64e4bd7a426f64176"
+  },
+  "/home/diegoagd10/Projects/dag-tools/opencode.json": {
+    "mtime": 1781894488.3643303,
+    "ast_hash": "eb4ada3b30866f63a060e13e0b499e65",
+    "semantic_hash": "eb4ada3b30866f63a060e13e0b499e65"
+  },
+  "/home/diegoagd10/Projects/dag-tools/package.json": {
+    "mtime": 1781901024.215285,
+    "ast_hash": "62cfc9a6618f31ea00281a94604ce6b7",
+    "semantic_hash": "62cfc9a6618f31ea00281a94604ce6b7"
+  },
+  "/home/diegoagd10/Projects/dag-tools/playwright.config.ts": {
+    "mtime": 1781882879.115188,
+    "ast_hash": "4aa51b9a6d41a597fd1f38b04afec6e1",
+    "semantic_hash": "4aa51b9a6d41a597fd1f38b04afec6e1"
+  },
+  "/home/diegoagd10/Projects/dag-tools/postcss.config.mjs": {
+    "mtime": 1781871015.2773273,
+    "ast_hash": "239f3ebf717465dc636818a1a619398d",
+    "semantic_hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "/home/diegoagd10/Projects/dag-tools/skills-lock.json": {
+    "mtime": 1781883442.5046442,
+    "ast_hash": "8a3c919d117a2e2866a3f626c44fa658",
+    "semantic_hash": "8a3c919d117a2e2866a3f626c44fa658"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/layout.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "28fda0345401fe3ea142849176f18dc8",
+    "semantic_hash": "28fda0345401fe3ea142849176f18dc8"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/page.tsx": {
+    "mtime": 1781901041.126126,
+    "ast_hash": "c87bfca8fa3780f850fab790ba2dfa98",
+    "semantic_hash": "c87bfca8fa3780f850fab790ba2dfa98"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/tools/combine-pdf/page.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "ea0ed4c91641066d22edeedc75503300",
+    "semantic_hash": "ea0ed4c91641066d22edeedc75503300"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/tools/combine-pdf/result/page.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "edfb219d5fe01fdbaa14622ad7d144a6",
+    "semantic_hash": "edfb219d5fe01fdbaa14622ad7d144a6"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/tools/split-pdf/page.tsx": {
+    "mtime": 1781901024.2182486,
+    "ast_hash": "1cf8f1ffa6cb0557db2657d6cc7aec64",
+    "semantic_hash": "1cf8f1ffa6cb0557db2657d6cc7aec64"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/app/tools/split-pdf/result/page.tsx": {
+    "mtime": 1781901024.218508,
+    "ast_hash": "f3bff526e186c3706cfda5cac377ed63",
+    "semantic_hash": "f3bff526e186c3706cfda5cac377ed63"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/components/combine-pdf/SourcePdfList.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "489f84b582a4a00296bea8aabeb11ed1",
+    "semantic_hash": "489f84b582a4a00296bea8aabeb11ed1"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/components/combine-pdf/UploadZone.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "70edb9b3e93dd8e5d8e252da51f03f04",
+    "semantic_hash": "70edb9b3e93dd8e5d8e252da51f03f04"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/components/site-header.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "e2f408ee069c245f49f6413dec1a1642",
+    "semantic_hash": "e2f408ee069c245f49f6413dec1a1642"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/components/tool-icons.tsx": {
+    "mtime": 1781901020.598435,
+    "ast_hash": "47c7681c82abacb24cea086d6b677a0e",
+    "semantic_hash": "47c7681c82abacb24cea086d6b677a0e"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/combine-pdf/constants.ts": {
+    "mtime": 1781890338.127998,
+    "ast_hash": "104c08958d11e1078244af91b3d64a92",
+    "semantic_hash": "104c08958d11e1078244af91b3d64a92"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/combine-pdf/merge.ts": {
+    "mtime": 1781882879.1183815,
+    "ast_hash": "550773392c5aa82ff24f13c5702a78bd",
+    "semantic_hash": "550773392c5aa82ff24f13c5702a78bd"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/combine-pdf/store.ts": {
+    "mtime": 1781901024.218508,
+    "ast_hash": "84e1c9a884bff4bfb0174c3841f8166b",
+    "semantic_hash": "84e1c9a884bff4bfb0174c3841f8166b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/combine-pdf/types.ts": {
+    "mtime": 1781901024.218508,
+    "ast_hash": "c414eff95204f4c2b2826b74df9be5d8",
+    "semantic_hash": "c414eff95204f4c2b2826b74df9be5d8"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/combine-pdf/validate.ts": {
+    "mtime": 1781882879.1183815,
+    "ast_hash": "28ed67df1a06864e9c1c713e8d2b547b",
+    "semantic_hash": "28ed67df1a06864e9c1c713e8d2b547b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/pdf-tools/blob-url.ts": {
+    "mtime": 1781901024.218508,
+    "ast_hash": "7b90282d9213f3a995845651d9a4b5e3",
+    "semantic_hash": "7b90282d9213f3a995845651d9a4b5e3"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/pdf-tools/detect.ts": {
+    "mtime": 1781901024.2190223,
+    "ast_hash": "58c234829426bb68e0f4f41a86718d71",
+    "semantic_hash": "58c234829426bb68e0f4f41a86718d71"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/pdf-tools/types.ts": {
+    "mtime": 1781901024.2190223,
+    "ast_hash": "bf24d9ec94e73e1dafafc927a26c544b",
+    "semantic_hash": "bf24d9ec94e73e1dafafc927a26c544b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/split-pdf/constants.ts": {
+    "mtime": 1781901024.2190223,
+    "ast_hash": "2bf0f4e86bdf681f2bdc8c370707150b",
+    "semantic_hash": "2bf0f4e86bdf681f2bdc8c370707150b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/split-pdf/split.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "805821202c9811379e5a0612b88a476a",
+    "semantic_hash": "805821202c9811379e5a0612b88a476a"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/split-pdf/store.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "1239f38ef70fdd0bb118634141d2f2be",
+    "semantic_hash": "1239f38ef70fdd0bb118634141d2f2be"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/split-pdf/types.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "dcb3e6a3dd9f17016bce2051b802f585",
+    "semantic_hash": "dcb3e6a3dd9f17016bce2051b802f585"
+  },
+  "/home/diegoagd10/Projects/dag-tools/src/lib/split-pdf/validate.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "ee4d7bea05708bdb691ec7f11842dd9a",
+    "semantic_hash": "ee4d7bea05708bdb691ec7f11842dd9a"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/e2e/combine-pdf.spec.ts": {
+    "mtime": 1781882879.1186278,
+    "ast_hash": "74f27d35f724dfac8c09f553e7ce241d",
+    "semantic_hash": "74f27d35f724dfac8c09f553e7ce241d"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/e2e/split-pdf.spec.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "0ed3e13bdd36b31d7c993244159c3670",
+    "semantic_hash": "0ed3e13bdd36b31d7c993244159c3670"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/constants.test.ts": {
+    "mtime": 1781882879.118765,
+    "ast_hash": "b0af7ef6cf6e376b168802ce6a2c8edf",
+    "semantic_hash": "b0af7ef6cf6e376b168802ce6a2c8edf"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/detect.test.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "345c2f349c7c9c657dc376c79e87cc82",
+    "semantic_hash": "345c2f349c7c9c657dc376c79e87cc82"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/merge.test.ts": {
+    "mtime": 1781882879.1189106,
+    "ast_hash": "94d23a4967d3d6000a7009c1039fb0b0",
+    "semantic_hash": "94d23a4967d3d6000a7009c1039fb0b0"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/split-store.test.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "30218dc7a21514627c3cab50a98bc50d",
+    "semantic_hash": "30218dc7a21514627c3cab50a98bc50d"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/split-validate.test.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "96ce871b54991d3a35ff0ac86bbf18f3",
+    "semantic_hash": "96ce871b54991d3a35ff0ac86bbf18f3"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/split.test.ts": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "89053c8ee501ba200f53627ec685c4f3",
+    "semantic_hash": "89053c8ee501ba200f53627ec685c4f3"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/unit/validate.test.ts": {
+    "mtime": 1781882879.1189106,
+    "ast_hash": "50c10cb2e0038c21cdc2ad562d24312b",
+    "semantic_hash": "50c10cb2e0038c21cdc2ad562d24312b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tsconfig.json": {
+    "mtime": 1781871015.2774289,
+    "ast_hash": "ee17fd1c97c735e9f3564e3f5251f125",
+    "semantic_hash": "ee17fd1c97c735e9f3564e3f5251f125"
+  },
+  "/home/diegoagd10/Projects/dag-tools/vitest.config.ts": {
+    "mtime": 1781882879.1189106,
+    "ast_hash": "6870e81af67233fa7219858e6e184a37",
+    "semantic_hash": "6870e81af67233fa7219858e6e184a37"
+  },
+  "/home/diegoagd10/Projects/dag-tools/CLAUDE.md": {
+    "mtime": 1782087298.1859007,
+    "ast_hash": "5b77fa1e98e0761c7154aa314230b220",
+    "semantic_hash": "5b77fa1e98e0761c7154aa314230b220"
+  },
+  "/home/diegoagd10/Projects/dag-tools/CODING_STANDARDS.md": {
+    "mtime": 1782087253.173093,
+    "ast_hash": "ef2be2acd3541edd9c3f26fb2b3afea5",
+    "semantic_hash": "ef2be2acd3541edd9c3f26fb2b3afea5"
+  },
+  "/home/diegoagd10/Projects/dag-tools/CONTEXT.md": {
+    "mtime": 1781903154.8669605,
+    "ast_hash": "5a1d67999b864aaebcc42e5551f9cb2e",
+    "semantic_hash": "5a1d67999b864aaebcc42e5551f9cb2e"
+  },
+  "/home/diegoagd10/Projects/dag-tools/README.md": {
+    "mtime": 1781871015.2772832,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "/home/diegoagd10/Projects/dag-tools/docs/adr/0001-server-side-pdf-with-sqlite.md": {
+    "mtime": 1781903163.9321404,
+    "ast_hash": "afee9b467d6d1181bd0413251a6f3b3b",
+    "semantic_hash": "afee9b467d6d1181bd0413251a6f3b3b"
+  },
+  "/home/diegoagd10/Projects/dag-tools/docs/agents/domain.md": {
+    "mtime": 1781871800.914528,
+    "ast_hash": "dd747a8d482aef35561bb56c503d8ede",
+    "semantic_hash": "dd747a8d482aef35561bb56c503d8ede"
+  },
+  "/home/diegoagd10/Projects/dag-tools/docs/agents/issue-tracker.md": {
+    "mtime": 1781871800.913528,
+    "ast_hash": "62ad63f4f8ba89c13e9dd86fdc3cfbaa",
+    "semantic_hash": "62ad63f4f8ba89c13e9dd86fdc3cfbaa"
+  },
+  "/home/diegoagd10/Projects/dag-tools/docs/agents/triage-labels.md": {
+    "mtime": 1781871800.913528,
+    "ast_hash": "9847fe092d778931d2cf66cbc8f1dc31",
+    "semantic_hash": "9847fe092d778931d2cf66cbc8f1dc31"
+  },
+  "/home/diegoagd10/Projects/dag-tools/pnpm-workspace.yaml": {
+    "mtime": 1781882879.1161878,
+    "ast_hash": "a800062e52322b626879a0760092d845",
+    "semantic_hash": "a800062e52322b626879a0760092d845"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/fixtures/not-a-pdf.txt": {
+    "mtime": 1781882879.1186278,
+    "ast_hash": "986d0f4bf9b925124915f880b51369ea",
+    "semantic_hash": "986d0f4bf9b925124915f880b51369ea"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/fixtures/sample-1.pdf": {
+    "mtime": 1781882879.118765,
+    "ast_hash": "0164f6134ec97e81e9d2d21c9e1d8dbe",
+    "semantic_hash": "0164f6134ec97e81e9d2d21c9e1d8dbe"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/fixtures/sample-2.pdf": {
+    "mtime": 1781882879.118765,
+    "ast_hash": "e6617ac8771af47203d0b800194a8613",
+    "semantic_hash": "e6617ac8771af47203d0b800194a8613"
+  },
+  "/home/diegoagd10/Projects/dag-tools/tests/fixtures/sample-multi-page.pdf": {
+    "mtime": 1781901024.219276,
+    "ast_hash": "c460aa01a830b2a2e92744f6a010fb3f",
+    "semantic_hash": "c460aa01a830b2a2e92744f6a010fb3f"
+  },
+  "/home/diegoagd10/Projects/dag-tools/public/file.svg": {
+    "mtime": 1781871015.2772233,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "/home/diegoagd10/Projects/dag-tools/public/globe.svg": {
+    "mtime": 1781871015.2773805,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "/home/diegoagd10/Projects/dag-tools/public/next.svg": {
+    "mtime": 1781871015.277397,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "/home/diegoagd10/Projects/dag-tools/public/vercel.svg": {
+    "mtime": 1781871015.2774289,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "/home/diegoagd10/Projects/dag-tools/public/window.svg": {
+    "mtime": 1781871015.2774289,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}
