@@ -10,6 +10,7 @@
   "use strict";
 
   var MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+  var validationAbort = null; // AbortController for in-flight validation request
 
   function formatBytes(bytes) {
     if (bytes === 0) return "0 B";
@@ -83,7 +84,20 @@
       splitBtn.textContent = "Validating…";
       if (hintEl) hintEl.style.display = "none";
 
-      serverValidate(file, function (err, result) {
+      // Abort any in-flight validation for a previous file
+      if (validationAbort) {
+        validationAbort.abort();
+      }
+      validationAbort = new AbortController();
+
+      var validationToken = file;
+      serverValidate(file, validationAbort.signal, function (err, result) {
+        // Guard: ignore stale responses if the file changed since request was sent
+        var currentFile = input.files && input.files[0];
+        if (currentFile !== validationToken) {
+          return;
+        }
+
         if (err || !result || !result.valid) {
           var reason = (result && result.reason) || "corrupt";
           var messages = {
@@ -145,12 +159,22 @@
     reader.readAsArrayBuffer(file.slice(0, 5));
   }
 
-  function serverValidate(file, callback) {
+  function serverValidate(file, signal, callback) {
     var fd = new FormData();
     fd.append("file", file);
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/v1/pdf/split/validate");
+
+    // Wire abort signal: abort XHR when a new validation starts
+    if (signal) {
+      signal.addEventListener("abort", function () {
+        xhr.abort();
+      });
+      // If already aborted (race), don't send
+      if (signal.aborted) return;
+    }
+
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
@@ -164,6 +188,8 @@
       }
     };
     xhr.onerror = function () {
+      // Ignore aborted requests — they are intentional
+      if (xhr.status === 0) return;
       callback(new Error("Network error during validation"));
     };
     xhr.send(fd);
