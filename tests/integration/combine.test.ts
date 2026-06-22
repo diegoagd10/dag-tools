@@ -98,6 +98,114 @@ describe("POST /api/v1/pdf/combine", () => {
     const row = db.prepare("SELECT id, page_count FROM artifacts ORDER BY rowid DESC LIMIT 1").get() as { id: string; page_count: number };
     expect(row.page_count).toBe(5); // 3 + 2
   });
+
+  it("rejects an encrypted Source PDF with 422 and inline error naming the file", async () => {
+    const beforeCnt = (db.prepare("SELECT COUNT(*) as cnt FROM artifacts").get() as { cnt: number }).cnt;
+
+    const fd = new FormData();
+    const a = new Uint8Array(readFileSync(resolve(fixtures, "sample-1.pdf")));
+    const b = new Uint8Array(readFileSync(resolve(fixtures, "encrypted.pdf")));
+    fd.append("files[]", new Blob([a], { type: "application/pdf" }), "sample-1.pdf");
+    fd.append("files[]", new Blob([b], { type: "application/pdf" }), "encrypted.pdf");
+
+    const res = await app.request("/api/v1/pdf/combine", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(422);
+    const html = await res.text();
+    expect(html).toContain("encrypted.pdf");
+    expect(html).toContain("password-protected");
+    // Fragment, not a full page
+    expect(html).not.toContain("<!DOCTYPE html>");
+
+    // No new artifact should be written
+    const afterCnt = (db.prepare("SELECT COUNT(*) as cnt FROM artifacts").get() as { cnt: number }).cnt;
+    expect(afterCnt).toBe(beforeCnt);
+  });
+
+  it("rejects a corrupt Source PDF with 422 and inline error naming the file", async () => {
+    const beforeCnt = (db.prepare("SELECT COUNT(*) as cnt FROM artifacts").get() as { cnt: number }).cnt;
+
+    const fd = new FormData();
+    const a = new Uint8Array(readFileSync(resolve(fixtures, "sample-1.pdf")));
+    const b = new Uint8Array(readFileSync(resolve(fixtures, "corrupt.pdf")));
+    fd.append("files[]", new Blob([a], { type: "application/pdf" }), "sample-1.pdf");
+    fd.append("files[]", new Blob([b], { type: "application/pdf" }), "corrupt.pdf");
+
+    const res = await app.request("/api/v1/pdf/combine", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(422);
+    const html = await res.text();
+    expect(html).toContain("corrupt.pdf");
+    expect(html).toContain("corrupt");
+    // Fragment, not a full page
+    expect(html).not.toContain("<!DOCTYPE html>");
+
+    // No new artifact should be written
+    const afterCnt = (db.prepare("SELECT COUNT(*) as cnt FROM artifacts").get() as { cnt: number }).cnt;
+    expect(afterCnt).toBe(beforeCnt);
+  });
+
+  it("merges 3+ files in correct page order", async () => {
+    // sample-1.pdf (1 page), sample-2.pdf (2 pages), sample-multi-page.pdf (3 pages)
+    // Total: 6 pages. Order: 1st file pages first, 2nd next, 3rd last.
+    const fd = new FormData();
+    const a = new Uint8Array(readFileSync(resolve(fixtures, "sample-1.pdf")));
+    const b = new Uint8Array(readFileSync(resolve(fixtures, "sample-2.pdf")));
+    const c = new Uint8Array(readFileSync(resolve(fixtures, "sample-multi-page.pdf")));
+    fd.append("files[]", new Blob([a], { type: "application/pdf" }), "sample-1.pdf");
+    fd.append("files[]", new Blob([b], { type: "application/pdf" }), "sample-2.pdf");
+    fd.append("files[]", new Blob([c], { type: "application/pdf" }), "sample-multi-page.pdf");
+
+    const res = await app.request("/api/v1/pdf/combine", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const row = db.prepare("SELECT page_count FROM artifacts ORDER BY rowid DESC LIMIT 1").get() as { page_count: number };
+    expect(row.page_count).toBe(6); // 1 + 2 + 3
+  });
+});
+
+describe("GET /pdf/combine/row", () => {
+  let db: ReturnType<typeof Database>;
+  let storageDir: string;
+  let app: Hono;
+
+  beforeAll(() => {
+    db = new Database(":memory:");
+    initDb(db);
+    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-row-"));
+    app = createApp({ db, storageDir });
+  });
+
+  afterAll(() => {
+    db.close();
+    rmSync(storageDir, { recursive: true, force: true });
+  });
+
+  it("returns 200 with a Source PDF row fragment containing a file input", async () => {
+    const res = await app.request("/pdf/combine/row?index=3");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Should contain a file input named files[]
+    expect(html).toContain('name="files[]"');
+    // Should contain remove button
+    expect(html).toContain("remove-row");
+    // Should be a fragment, not a full HTML page
+    expect(html).not.toContain("<!DOCTYPE html>");
+    expect(html).not.toContain("<html");
+    // Should show the index in the label
+    expect(html).toContain("Source PDF 3");
+  });
 });
 
 describe("GET /pdf/combine/:id", () => {

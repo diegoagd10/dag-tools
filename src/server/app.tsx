@@ -9,7 +9,9 @@ import { PDFDocument } from "pdf-lib";
 import { Home } from "./views/Home";
 import { PdfCombine } from "./views/PdfCombine";
 import { PdfSplit } from "./views/PdfSplit";
+import { SourcePdfRow } from "./views/SourcePdfRow";
 import { ShareLinkPanel } from "./views/ShareLinkPanel";
+import { CombineErrorPanel } from "./views/CombineErrorPanel";
 import { ArtifactNotFound } from "./views/ArtifactNotFound";
 import { mergePdfs } from "./merge-pdfs";
 import { persistArtifact } from "./artifacts";
@@ -42,8 +44,18 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
     return c.html(<PdfSplit />);
   });
 
+  // GET /pdf/combine/row — return a Source PDF row fragment for hx-get
+  app.get("/pdf/combine/row", (c) => {
+    void db;
+    void storageDir;
+    const index = parseInt(c.req.query("index") || "0", 10) || 0;
+    return c.html(<SourcePdfRow index={index} />);
+  });
+
   // POST /api/v1/pdf/combine — merge Source PDFs and persist Artifact
   app.post("/api/v1/pdf/combine", async (c) => {
+    const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
+
     const formData = await c.req.formData();
     const files = formData.getAll("files[]") as File[];
 
@@ -55,7 +67,19 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
       );
     }
 
-    // Read buffers and validate each is a PDF
+    // Server-side total size cap
+    let totalSize = 0;
+    for (const file of files) {
+      totalSize += file.size;
+    }
+    if (totalSize > MAX_TOTAL_BYTES) {
+      return c.json(
+        { error: "The combined size of all Source PDFs exceeds the 50 MB limit." },
+        400,
+      );
+    }
+
+    // Read buffers and validate each is a PDF (magic bytes + parse validation)
     const buffers: Uint8Array[] = [];
     for (const file of files) {
       const buf = new Uint8Array(await file.arrayBuffer());
@@ -68,11 +92,21 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
       buffers.push(buf);
     }
 
-    // Compute page count from input files
+    // Parse validation: detect encrypted and corrupt Source PDFs
     let pageCount = 0;
-    for (const buf of buffers) {
-      const doc = await PDFDocument.load(buf);
-      pageCount += doc.getPageCount();
+    for (let i = 0; i < buffers.length; i++) {
+      try {
+        const doc = await PDFDocument.load(buffers[i]);
+        pageCount += doc.getPageCount();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const isEncrypted = message.includes("is encrypted");
+        const reason = isEncrypted ? "encrypted" : "corrupt";
+        return c.html(
+          <CombineErrorPanel filename={files[i].name} reason={reason} />,
+          422,
+        );
+      }
     }
 
     // Merge PDFs in form order
@@ -97,8 +131,10 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
       combined,
     );
 
-    // Return HTML fragment with Share Link
-    return c.html(<ShareLinkPanel id={id} filename={filename} />);
+    // Return HTML fragment with Share Link and page count
+    return c.html(
+      <ShareLinkPanel id={id} filename={filename} pageCount={pageCount} />,
+    );
   });
 
   // GET /pdf/combine/:id — serve the Combined PDF or return 404
