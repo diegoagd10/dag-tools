@@ -28,4 +28,6 @@ The user wanted the ability to share results ("share later"), and chose SQLite +
 
 ## Migration
 
-Strangler fig, per-Tool. Hono runs alongside Next.js on a separate port; each Tool migrated end-to-end (frontend + API) before moving on. QR goes straight to Hono since it was never implemented. Next.js is dropped when no Tools remain.
+**Superseded (2026-06-22):** The original plan was strangler-fig, per-Tool, with Hono running alongside Next.js. That assumed Next.js stayed as the frontend during the transition. The frontend is now being replaced wholesale with **htmx + Hono JSX** (no React, no Next.js), so the strangler's premise no longer holds.
+
+New plan: **big-bang on a branch.** With only two small Tools (Combine, Split) plus Home, and the entire frontend rewritten in htmx, there is nothing to migrate incrementally — the pure processing logic (`merge.ts` via pdf-lib, `split.ts` via jszip) ports to Node untouched, but every page and component is new. The strangler's per-Tool isolation only paid off while Next.js remained; a full frontend rewrite would just incur dual-server ops overhead (two ports, nginx routing split, two build systems) for a personal tool. Next.js, React, and Zustand are removed in the cutover. QR goes straight to Hono since it was never implemented.

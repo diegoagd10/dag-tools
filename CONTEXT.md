@@ -57,7 +57,7 @@ The text string encoded into a QR Code by the QR Code Tool. May be a URL or plai
 _Avoid_: URL, text, payload, input, query
 
 **QR Code** *[planned]*:
-The visual representation of the encoded QR Content. What the user sees rendered when the Share Link is opened. Encoding happens client-side in the browser.
+The visual representation of the encoded QR Content. What the user sees rendered when the Share Link is opened. Encoding happens **server-side**: the backend emits the QR as inline SVG embedded in the Share Link page. No browser JS is involved (consistent with Server-Side Processing).
 _Avoid_: QR image, output image, barcode
 
 **Share Link**:
@@ -69,7 +69,7 @@ The opaque string identifier of an Artifact. Generated when the Tool is invoked 
 _Avoid_: token, slug, short code
 
 **QR Code Tool** *[planned]*:
-A Link Tool that encodes a QR Content into a QR Code and produces a Share Link for distribution. Form at `/links/qr`, API at `POST /api/v1/links/qr`, Share Link at `/links/qr/:id`. The Share Link page fetches the QR Content from the backend and renders the QR Code client-side.
+A Link Tool that encodes a QR Content into a QR Code and produces a Share Link for distribution. Form at `/links/qr`, API at `POST /api/v1/links/qr`, Share Link at `/links/qr/:id`. The Share Link page is rendered server-side: the backend reads the QR Content and embeds the QR Code as inline SVG in the page.
 _Avoid_: QR generator, QR maker, QR tool
 
 **Server-Side Processing**:
