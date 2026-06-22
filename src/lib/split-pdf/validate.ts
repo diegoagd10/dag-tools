@@ -14,5 +14,8 @@ export function validate(sourcePdf: SourcePdf | null): SplitValidationResult {
   if (sourcePdf.size > SOURCE_PDF_SIZE_LIMIT_BYTES) {
     return { accepted: false, reason: "oversize" };
   }
+  if (sourcePdf.pageCount < 1) {
+    return { accepted: false, reason: "too-few-pages" };
+  }
   return { accepted: true, reason: null };
 }

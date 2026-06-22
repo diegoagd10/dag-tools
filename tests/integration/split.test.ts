@@ -327,3 +327,135 @@ describe("GET /pdf/split (form page)", () => {
     expect(html).toContain("split-form.js");
   });
 });
+
+describe("POST /api/v1/pdf/split/validate", () => {
+  let db: ReturnType<typeof Database>;
+  let storageDir: string;
+  let app: Hono;
+
+  beforeAll(() => {
+    db = new Database(":memory:");
+    initDb(db);
+    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-split-validate-"));
+    app = createApp({ db, storageDir });
+  });
+
+  afterAll(() => {
+    db.close();
+    rmSync(storageDir, { recursive: true, force: true });
+  });
+
+  it("returns valid with page count for a good multi-page PDF", async () => {
+    const fd = buildFormData("sample-multi-page.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({
+      valid: true,
+      pageCount: 3,
+      size: expect.any(Number),
+      name: "sample-multi-page.pdf",
+    });
+  });
+
+  it("returns valid with pageCount=1 for a single-page PDF", async () => {
+    const fd = buildFormData("sample-1.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(true);
+    expect(json.pageCount).toBe(1);
+  });
+
+  it("rejects a non-PDF file extension", async () => {
+    const fd = new FormData();
+    fd.append("file", new Blob(["not a pdf"], { type: "text/plain" }), "notes.txt");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("not-a-pdf");
+  });
+
+  it("rejects an encrypted PDF", async () => {
+    const fd = buildFormData("encrypted.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("encrypted");
+  });
+
+  it("rejects a corrupt PDF", async () => {
+    const fd = buildFormData("corrupt.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("corrupt");
+  });
+
+  it("rejects an oversized file", async () => {
+    const buf = new Uint8Array(51 * 1024 * 1024);
+    buf[0] = 0x25; // %
+    buf[1] = 0x50; // P
+    buf[2] = 0x44; // D
+    buf[3] = 0x46; // F
+    buf[4] = 0x2d; // -
+
+    const fd = new FormData();
+    fd.append("file", new Blob([buf], { type: "application/pdf" }), "large.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("oversize");
+  });
+
+  it("rejects a file with PDF header but zero pages", async () => {
+    // A minimal PDF-like blob with %PDF- header but no actual pages
+    // pdf-lib will either fail to load it (corrupt) or load it with 0 pages (too-few-pages)
+    const minimalPdfBytes = new Uint8Array([
+      0x25, 0x50, 0x44, 0x46, 0x2d, // %PDF-
+    ]);
+    const buf = new Uint8Array(5);
+    buf.set(minimalPdfBytes);
+
+    const fd = new FormData();
+    fd.append("file", new Blob([buf], { type: "application/pdf" }), "empty.pdf");
+    const res = await app.request("/api/v1/pdf/split/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    // Either corrupt (pdf-lib can't parse) or too-few-pages (parses with 0 pages)
+    expect(["corrupt", "too-few-pages"]).toContain(json.reason);
+  });
+});

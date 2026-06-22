@@ -58,4 +58,25 @@ describe("validate", () => {
       validate(makeSourcePdf({ size: SOURCE_PDF_SIZE_LIMIT_BYTES })),
     ).toEqual({ accepted: true, reason: null });
   });
+
+  it("rejects a Source PDF with zero pages", () => {
+    expect(validate(makeSourcePdf({ pageCount: 0 }))).toEqual({
+      accepted: false,
+      reason: "too-few-pages",
+    });
+  });
+
+  it("accepts a Source PDF with exactly 1 page", () => {
+    expect(validate(makeSourcePdf({ pageCount: 1 }))).toEqual({
+      accepted: true,
+      reason: null,
+    });
+  });
+
+  it("accepts a Source PDF with many pages", () => {
+    expect(validate(makeSourcePdf({ pageCount: 99 }))).toEqual({
+      accepted: true,
+      reason: null,
+    });
+  });
 });

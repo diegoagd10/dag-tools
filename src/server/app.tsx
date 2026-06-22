@@ -261,6 +261,55 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
     );
   });
 
+  // POST /api/v1/pdf/split/validate — pre-flight validation (page count gate)
+  app.post("/api/v1/pdf/split/validate", async (c) => {
+    const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file || file.size === 0) {
+      return c.json({ valid: false, reason: "not-a-pdf" });
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return c.json({ valid: false, reason: "not-a-pdf" });
+    }
+
+    if (file.size > MAX_FILE_BYTES) {
+      return c.json({ valid: false, reason: "oversize" });
+    }
+
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (buf.length < 4 || buf[0] !== 0x25 || buf[1] !== 0x50) {
+      return c.json({ valid: false, reason: "not-a-pdf" });
+    }
+
+    let pageCount: number;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(buf);
+      pageCount = doc.getPageCount();
+      if (pageCount < 1) {
+        return c.json({ valid: false, reason: "too-few-pages" });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isEncrypted = message.includes("is encrypted");
+      return c.json({
+        valid: false,
+        reason: isEncrypted ? "encrypted" : "corrupt",
+      });
+    }
+
+    return c.json({
+      valid: true,
+      pageCount,
+      size: file.size,
+      name: file.name,
+    });
+  });
+
   // GET /pdf/split/:id — serve the Split ZIP or return 404
   app.get("/pdf/split/:id", (c) => {
     const id = c.req.param("id");

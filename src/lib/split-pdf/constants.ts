@@ -8,6 +8,7 @@ export const REJECTION_MESSAGES: Record<SplitRejectionReason, string> = {
   "not-a-pdf": "This file is not a valid PDF",
   encrypted: "This file is password-protected",
   oversize: "This file is over 50MB",
+  "too-few-pages": "This PDF contains no pages to split",
 };
 
 export function buildSplitZipFilename(date = new Date()): string {

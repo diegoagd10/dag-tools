@@ -1,4 +1,4 @@
-export type SplitRejectionReason = "not-a-pdf" | "encrypted" | "oversize";
+export type SplitRejectionReason = "not-a-pdf" | "encrypted" | "oversize" | "too-few-pages";
 
 import type { SourcePdf } from "@/lib/pdf-tools/types";
 export type { SourcePdf };
