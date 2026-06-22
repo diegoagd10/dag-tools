@@ -2,7 +2,14 @@
 
 import { Layout } from "./Layout";
 
-export const ArtifactNotFound = () => {
+export const ArtifactNotFound = ({
+  backLink,
+}: {
+  backLink?: { href: string; label: string };
+}) => {
+  const href = backLink?.href ?? "/pdf/combine";
+  const label = backLink?.label ?? "Back to PDF Combine";
+
   return (
     <Layout title="Artifact not available — dag-tools">
       <div class="flex flex-col items-start gap-6">
@@ -14,10 +21,10 @@ export const ArtifactNotFound = () => {
           stored permanently, but they can be deleted by the creator.
         </p>
         <a
-          href="/pdf/combine"
+          href={href}
           class="inline-flex items-center rounded bg-accent px-4 py-2 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
         >
-          Back to PDF Combine
+          {label}
         </a>
       </div>
     </Layout>

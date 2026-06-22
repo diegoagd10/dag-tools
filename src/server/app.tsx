@@ -13,8 +13,10 @@ import { SourcePdfRow } from "./views/SourcePdfRow";
 import { ShareLinkPanel } from "./views/ShareLinkPanel";
 import { CombineErrorPanel } from "./views/CombineErrorPanel";
 import { ArtifactNotFound } from "./views/ArtifactNotFound";
+import { SplitErrorPanel } from "./views/SplitErrorPanel";
 import { mergePdfs } from "./merge-pdfs";
 import { persistArtifact } from "./artifacts";
+import { split } from "@/lib/split-pdf/split";
 
 export type AppDeps = { db: Database.Database; storageDir: string };
 
@@ -158,6 +160,138 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
 
     return c.body(blob as never, 200, {
       "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${row.filename}"`,
+      "Content-Length": String(blob.length),
+    });
+  });
+
+  // POST /api/v1/pdf/split — split a Source PDF and persist Artifact
+  app.post("/api/v1/pdf/split", async (c) => {
+    const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+
+    // Must have a file
+    if (!file || file.size === 0) {
+      return c.html(
+        <SplitErrorPanel filename="No file" reason="not-a-pdf" />,
+        422,
+      );
+    }
+
+    // Check file extension
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return c.html(
+        <SplitErrorPanel filename={file.name} reason="not-a-pdf" />,
+        422,
+      );
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_BYTES) {
+      return c.html(
+        <SplitErrorPanel filename={file.name} reason="oversize" />,
+        422,
+      );
+    }
+
+    // Read buffer and validate magic bytes
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (buf.length < 4 || buf[0] !== 0x25 || buf[1] !== 0x50) {
+      return c.html(
+        <SplitErrorPanel filename={file.name} reason="not-a-pdf" />,
+        422,
+      );
+    }
+
+    // Parse validation: detect encrypted, corrupt, or zero-page Source PDFs
+    let pageCount: number;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(buf);
+      pageCount = doc.getPageCount();
+      if (pageCount < 1) {
+        return c.html(
+          <SplitErrorPanel filename={file.name} reason="too-few-pages" />,
+          422,
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isEncrypted = message.includes("is encrypted");
+      const reason = isEncrypted ? "encrypted" : "corrupt";
+      return c.html(
+        <SplitErrorPanel filename={file.name} reason={reason} />,
+        422,
+      );
+    }
+
+    // Split — we need a File-like object. Reconstruct from buffer.
+    const fileForSplit = new File([buf], file.name, { type: file.type });
+    const zipBytes = await split(fileForSplit);
+
+    // Generate today's date for filename
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = `split-${today}.zip`;
+
+    // Persist artifact (row + blob)
+    const { id } = persistArtifact(
+      db,
+      storageDir,
+      {
+        tool: "pdf-split",
+        filename,
+        mimeType: "application/zip",
+        ext: "zip",
+        size: zipBytes.length,
+        pageCount,
+      },
+      zipBytes,
+    );
+
+    // Return HTML fragment with Share Link and page count
+    return c.html(
+      <ShareLinkPanel
+        id={id}
+        filename={filename}
+        pageCount={pageCount}
+        pathPrefix="/pdf/split"
+      />,
+    );
+  });
+
+  // GET /pdf/split/:id — serve the Split ZIP or return 404
+  app.get("/pdf/split/:id", (c) => {
+    const id = c.req.param("id");
+
+    const row = db
+      .prepare("SELECT filename, ext FROM artifacts WHERE id = ?")
+      .get(id) as { filename: string; ext: string } | undefined;
+
+    if (!row) {
+      return c.html(
+        <ArtifactNotFound
+          backLink={{ href: "/pdf/split", label: "Back to PDF Split" }}
+        />,
+        404,
+      );
+    }
+
+    const filePath = join(storageDir, `${id}.${row.ext}`);
+    if (!existsSync(filePath)) {
+      return c.html(
+        <ArtifactNotFound
+          backLink={{ href: "/pdf/split", label: "Back to PDF Split" }}
+        />,
+        404,
+      );
+    }
+
+    const blob = readFileSync(filePath);
+
+    return c.body(blob as never, 200, {
+      "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${row.filename}"`,
       "Content-Length": String(blob.length),
     });

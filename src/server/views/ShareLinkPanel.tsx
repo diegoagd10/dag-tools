@@ -4,22 +4,31 @@ export const ShareLinkPanel = ({
   id,
   filename,
   pageCount,
+  pathPrefix = "/pdf/combine",
 }: {
   id: string;
   filename: string;
   pageCount?: number;
+  pathPrefix?: string;
 }) => {
-  const url = `/pdf/combine/${id}`;
+  const url = `${pathPrefix}/${id}`;
+  const isCombine = pathPrefix === "/pdf/combine";
+  const resultId = isCombine ? "combine-result" : "split-result";
+  const title = isCombine ? "Combined PDF ready" : "Split PDFs ready";
   const pagesLabel =
     pageCount != null ? `${pageCount} page${pageCount !== 1 ? "s" : ""}` : null;
+  const docLabel = isCombine
+    ? `Your merged document`
+    : `Your split archive`;
   return (
-    <div id="combine-result">
+    <div id={resultId}>
       <div class="mt-6 rounded-lg border border-hairline bg-surface p-6">
         <h2 class="font-sans text-lg font-medium tracking-[-0.005em] text-ink">
-          Combined PDF ready
+          {title}
         </h2>
         <p class="mt-2 text-sm leading-relaxed text-ink-soft">
-          Your merged document <span class="font-mono text-ink">{filename}</span>{" "}
+          {docLabel}{" "}
+          <span class="font-mono text-ink">{filename}</span>{" "}
           {pagesLabel != null ? (
             <span>
               (<span class="tabular-nums text-ink">{pagesLabel}</span>){" "}
