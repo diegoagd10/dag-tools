@@ -38,4 +38,38 @@ describe("Home route", () => {
 
     expect(res.headers.get("content-type")).toContain("text/html");
   });
+
+  describe("PDF Combine route", () => {
+    it("returns 200 on /pdf/combine", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/pdf/combine");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("renders PDF Combine heading", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/pdf/combine");
+
+      const text = await res.text();
+      expect(text).toContain("PDF Combine");
+    });
+  });
+
+  describe("PDF Split route", () => {
+    it("returns 200 on /pdf/split", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/pdf/split");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("renders PDF Split heading", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/pdf/split");
+
+      const text = await res.text();
+      expect(text).toContain("PDF Split");
+    });
+  });
 });
