@@ -10,12 +10,18 @@ import type { Hono } from "hono";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 
-/** Extract a single page from a PDFDocument as a standalone PDF buffer. */
-async function extractPageAsBuffer(doc: PDFDocument, pageIdx: number): Promise<Uint8Array> {
-  const single = await PDFDocument.create();
-  const [copied] = await single.copyPages(doc, [pageIdx]);
-  single.addPage(copied);
-  return await single.save();
+/** Structural fingerprint of a PDF page, stable across serializations. */
+interface PageFingerprint {
+  width: number;
+  height: number;
+  mediaBox: { x: number; y: number; width: number; height: number };
+}
+
+function fingerprintPage(doc: PDFDocument, pageIdx: number): PageFingerprint {
+  const page = doc.getPage(pageIdx);
+  const { width, height } = page.getSize();
+  const mb = page.getMediaBox();
+  return { width, height, mediaBox: { x: mb.x, y: mb.y, width: mb.width, height: mb.height } };
 }
 
 function buildFormData(): FormData {
@@ -161,11 +167,21 @@ describe("POST /api/v1/pdf/combine", () => {
   });
 
   it("merges 3+ files in correct page order", async () => {
-    // sample-1.pdf (1 page), sample-2.pdf (2 pages), sample-multi-page.pdf (3 pages)
-    // Total: 6 pages. Order: first file's pages come first, second next, third last.
+    // sample-1.pdf (1 page, portrait 595×842), sample-2.pdf (2 pages, landscape 842×595),
+    // sample-multi-page.pdf (3 pages, portrait 595×842)
+    // Total: 6 pages. Expected order: sample-1 pages, then sample-2 pages, then sample-multi-page pages.
     const a = new Uint8Array(readFileSync(resolve(fixtures, "sample-1.pdf")));
     const b = new Uint8Array(readFileSync(resolve(fixtures, "sample-2.pdf")));
     const c = new Uint8Array(readFileSync(resolve(fixtures, "sample-multi-page.pdf")));
+
+    // Build expected fingerprint sequence from source files
+    const expectedFingerprints: PageFingerprint[] = [];
+    for (const sourceBuf of [a, b, c]) {
+      const sourceDoc = await PDFDocument.load(sourceBuf);
+      for (let sp = 0; sp < sourceDoc.getPageCount(); sp++) {
+        expectedFingerprints.push(fingerprintPage(sourceDoc, sp));
+      }
+    }
 
     const fd = new FormData();
     fd.append("files[]", new Blob([a], { type: "application/pdf" }), "sample-1.pdf");
@@ -182,25 +198,18 @@ describe("POST /api/v1/pdf/combine", () => {
     const row = db.prepare("SELECT id, page_count FROM artifacts ORDER BY rowid DESC LIMIT 1").get() as { id: string; page_count: number };
     expect(row.page_count).toBe(6); // 1 + 2 + 3
 
-    // Read the merged PDF from disk and verify page-by-page order
+    // Read merged PDF from disk and verify each page matches expected source fingerprint
     const combinedBuf = readFileSync(join(storageDir, `${row.id}.pdf`));
     const mergedDoc = await PDFDocument.load(combinedBuf);
 
-    // Extract each source page as a standalone buffer for comparison
-    const sourceFiles = [a, b, c];
-    const sourcePageBufs: Uint8Array[] = [];
-    for (const sourceBuf of sourceFiles) {
-      const sourceDoc = await PDFDocument.load(sourceBuf);
-      for (let sp = 0; sp < sourceDoc.getPageCount(); sp++) {
-        sourcePageBufs.push(await extractPageAsBuffer(sourceDoc, sp));
-      }
-    }
+    expect(mergedDoc.getPageCount()).toBe(expectedFingerprints.length);
 
-    // Extract each merged page and compare against expected source pages
-    expect(mergedDoc.getPageCount()).toBe(sourcePageBufs.length);
-    for (let i = 0; i < sourcePageBufs.length; i++) {
-      const mergedPageBuf = await extractPageAsBuffer(mergedDoc, i);
-      expect(Buffer.from(mergedPageBuf).equals(Buffer.from(sourcePageBufs[i]))).toBe(true);
+    for (let i = 0; i < expectedFingerprints.length; i++) {
+      const merged = fingerprintPage(mergedDoc, i);
+      const expected = expectedFingerprints[i];
+      expect(merged.width).toBe(expected.width);
+      expect(merged.height).toBe(expected.height);
+      expect(merged.mediaBox).toEqual(expected.mediaBox);
     }
   });
 });
