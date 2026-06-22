@@ -8,13 +8,22 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "sandcastle:build": "sandcastle docker build-image",
-    "loop": "pnpm dlx tsx .sandcastle/main.mts"
+    "loop": "pnpm dlx tsx .sandcastle/main.mts",
+    "dev:hono": "tsx watch src/server/index.ts",
+    "start:hono": "pnpm build:css && tsx src/server/index.ts",
+    "build:css": "pnpm tailwindcss -i static/styles.src.css -o static/styles.css"
   },
   "dependencies": {
+    "@hono/node-server": "^2.0.5",
+    "@tailwindcss/cli": "^4.3.1",
+    "better-sqlite3": "^12.11.1",
+    "hono": "^4.12.26",
     "jszip": "^3.10.1",
+    "nanoid": "^5.1.15",
     "next": "16.2.9",
     "pdf-lib": "^1.17.1",
     "react": "19.2.4",
@@ -25,12 +34,14 @@
     "@ai-hero/sandcastle": "^0.10.0",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.9"
   }

@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored static assets:
+    "static/vendor/**",
+    // Hono server files (not Next.js):
+    "src/server/**",
   ]),
 ]);
 
