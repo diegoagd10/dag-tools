@@ -59,9 +59,11 @@ test("Hono PDF Combine — add row, upload files, reorder, submit, Share Link ap
   // htmx swaps #combine-result with the response
   await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
 
-  // Should contain a share link
-  const resultHtml = await page.locator("#combine-result").innerText();
-  expect(resultHtml).toMatch(/\/pdf\/combine\/[A-Za-z0-9_-]+/);
+  // Should contain a share link in the text input
+  const urlInput = page.locator("#combine-result input[type='text']");
+  await expect(urlInput).toBeVisible();
+  const inputValue = await urlInput.inputValue();
+  expect(inputValue).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
 
   // Should show a link to open/download
   const link = page.locator("#combine-result a");

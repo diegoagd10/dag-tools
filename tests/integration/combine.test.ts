@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
+import { PDFDocument } from "pdf-lib";
 import { createApp } from "@/server/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
@@ -8,6 +9,14 @@ import { tmpdir } from "node:os";
 import type { Hono } from "hono";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
+
+/** Extract a single page from a PDFDocument as a standalone PDF buffer. */
+async function extractPageAsBuffer(doc: PDFDocument, pageIdx: number): Promise<Uint8Array> {
+  const single = await PDFDocument.create();
+  const [copied] = await single.copyPages(doc, [pageIdx]);
+  single.addPage(copied);
+  return await single.save();
+}
 
 function buildFormData(): FormData {
   const fd = new FormData();
@@ -153,11 +162,12 @@ describe("POST /api/v1/pdf/combine", () => {
 
   it("merges 3+ files in correct page order", async () => {
     // sample-1.pdf (1 page), sample-2.pdf (2 pages), sample-multi-page.pdf (3 pages)
-    // Total: 6 pages. Order: 1st file pages first, 2nd next, 3rd last.
-    const fd = new FormData();
+    // Total: 6 pages. Order: first file's pages come first, second next, third last.
     const a = new Uint8Array(readFileSync(resolve(fixtures, "sample-1.pdf")));
     const b = new Uint8Array(readFileSync(resolve(fixtures, "sample-2.pdf")));
     const c = new Uint8Array(readFileSync(resolve(fixtures, "sample-multi-page.pdf")));
+
+    const fd = new FormData();
     fd.append("files[]", new Blob([a], { type: "application/pdf" }), "sample-1.pdf");
     fd.append("files[]", new Blob([b], { type: "application/pdf" }), "sample-2.pdf");
     fd.append("files[]", new Blob([c], { type: "application/pdf" }), "sample-multi-page.pdf");
@@ -168,8 +178,30 @@ describe("POST /api/v1/pdf/combine", () => {
     });
 
     expect(res.status).toBe(200);
-    const row = db.prepare("SELECT page_count FROM artifacts ORDER BY rowid DESC LIMIT 1").get() as { page_count: number };
+
+    const row = db.prepare("SELECT id, page_count FROM artifacts ORDER BY rowid DESC LIMIT 1").get() as { id: string; page_count: number };
     expect(row.page_count).toBe(6); // 1 + 2 + 3
+
+    // Read the merged PDF from disk and verify page-by-page order
+    const combinedBuf = readFileSync(join(storageDir, `${row.id}.pdf`));
+    const mergedDoc = await PDFDocument.load(combinedBuf);
+
+    // Extract each source page as a standalone buffer for comparison
+    const sourceFiles = [a, b, c];
+    const sourcePageBufs: Uint8Array[] = [];
+    for (const sourceBuf of sourceFiles) {
+      const sourceDoc = await PDFDocument.load(sourceBuf);
+      for (let sp = 0; sp < sourceDoc.getPageCount(); sp++) {
+        sourcePageBufs.push(await extractPageAsBuffer(sourceDoc, sp));
+      }
+    }
+
+    // Extract each merged page and compare against expected source pages
+    expect(mergedDoc.getPageCount()).toBe(sourcePageBufs.length);
+    for (let i = 0; i < sourcePageBufs.length; i++) {
+      const mergedPageBuf = await extractPageAsBuffer(mergedDoc, i);
+      expect(Buffer.from(mergedPageBuf).equals(Buffer.from(sourcePageBufs[i]))).toBe(true);
+    }
   });
 });
 

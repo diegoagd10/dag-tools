@@ -14,7 +14,7 @@
     "test:e2e:hono": "playwright test --config=playwright.hono.config.ts",
     "sandcastle:build": "sandcastle docker build-image",
     "loop": "pnpm dlx tsx .sandcastle/main.mts",
-    "dev:hono": "tsx --tsconfig tsconfig.server.json watch src/server/index.ts",
+    "dev:hono": "tsx watch --tsconfig tsconfig.server.json src/server/index.ts",
     "start:hono": "pnpm build:css && tsx --tsconfig tsconfig.server.json src/server/index.ts",
     "build:css": "pnpm tailwindcss -i static/styles.src.css -o static/styles.css"
   },

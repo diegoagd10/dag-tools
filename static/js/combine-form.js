@@ -99,24 +99,38 @@
       if (prevMsg) prevMsg.remove();
 
       var file = input.files && input.files[0];
-      if (!file) continue;
+
+      // Hide file-size for rows without a file
+      var sizeEl = row.querySelector(".file-size");
+      if (!file) {
+        if (sizeEl) sizeEl.classList.add("hidden");
+        continue;
+      }
 
       var name = file.name.toLowerCase();
 
       // Check extension
       if (!name.endsWith(".pdf")) {
+        if (sizeEl) sizeEl.classList.add("hidden");
         rejections.push({ row: row, msg: "This file is not a valid PDF" });
         continue;
       }
 
       // Check size against running total
       if (runningTotal + file.size > MAX_TOTAL_BYTES) {
+        if (sizeEl) sizeEl.classList.add("hidden");
         rejections.push({ row: row, msg: "Adding this file would exceed the 50 MB total limit" });
         continue;
       }
 
       runningTotal += file.size;
       validCount++;
+
+      // Show per-file size
+      if (sizeEl) {
+        sizeEl.textContent = formatBytes(file.size);
+        sizeEl.classList.remove("hidden");
+      }
     }
 
     // Show rejection messages

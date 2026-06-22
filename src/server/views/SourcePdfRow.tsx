@@ -28,8 +28,9 @@ export const SourcePdfRow = ({ index }: { index: number }) => {
           type="file"
           name="files[]"
           accept=".pdf,application/pdf"
-          class="w-full text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
-        />
+            class="w-full text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
+          />
+          <span class="file-size hidden text-xs text-muted mt-0.5 tabular-nums"></span>
       </div>
       <button
         type="button"
