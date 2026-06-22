@@ -15,3 +15,13 @@ Five canonical roles, default strings: `needs-triage`, `needs-info`, `ready-for-
 ### Domain docs
 
 Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+<!-- ai-harness:start -->
+
+## Loop label policy
+
+- A **prd-issue** carries `ready-for-agent` only — never `loop`.
+- A **sub-issue** carries `ready-for-agent` + `loop`.
+
+<!-- ai-harness:end -->
+
