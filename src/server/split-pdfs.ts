@@ -5,14 +5,14 @@ export function entryName(index: number): string {
   return `page-${String(index + 1).padStart(3, "0")}.pdf`;
 }
 
-export async function split(file: File): Promise<Uint8Array> {
-  const source = await PDFDocument.load(await file.arrayBuffer());
+export async function splitPdfs(source: Uint8Array): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(source);
   const zip = new JSZip();
-  const pageCount = source.getPageCount();
+  const pageCount = doc.getPageCount();
 
   for (let i = 0; i < pageCount; i++) {
     const single = await PDFDocument.create();
-    const [page] = await single.copyPages(source, [i]);
+    const [page] = await single.copyPages(doc, [i]);
     single.addPage(page);
     const bytes = await single.save();
     zip.file(entryName(i), bytes);

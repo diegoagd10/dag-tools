@@ -16,7 +16,7 @@ import { ArtifactNotFound } from "./views/ArtifactNotFound";
 import { SplitErrorPanel } from "./views/SplitErrorPanel";
 import { mergePdfs } from "./merge-pdfs";
 import { persistArtifact } from "./artifacts";
-import { split } from "@/lib/split-pdf/split";
+import { splitPdfs } from "./split-pdfs";
 
 export type AppDeps = { db: Database.Database; storageDir: string };
 
@@ -227,9 +227,8 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
       );
     }
 
-    // Split — we need a File-like object. Reconstruct from buffer.
-    const fileForSplit = new File([buf], file.name, { type: file.type });
-    const zipBytes = await split(fileForSplit);
+    // Split
+    const zipBytes = await splitPdfs(buf);
 
     // Generate today's date for filename
     const today = new Date().toISOString().slice(0, 10);

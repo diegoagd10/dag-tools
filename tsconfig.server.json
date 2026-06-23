@@ -19,7 +19,6 @@
   },
   "include": [
     "src/server/**/*.ts",
-    "src/server/**/*.tsx",
-    "src/lib/split-pdf/**/*.ts"
+    "src/server/**/*.tsx"
   ]
 }
