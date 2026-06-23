@@ -72,19 +72,16 @@
 
   function onInput(e) {
     var el = e.target;
-    var raw = el.value;
 
-    // Check over-limit BEFORE truncating so the too-long hint surfaces.
-    // Server applies the byte limit to trimmed content; we match that here.
-    var rawLen = byteLength(raw);
-    if (rawLen > MAX_BYTES) {
-      el.value = truncateToByteLimit(raw, MAX_BYTES);
+    // Server trims then checks byte limit; client mirrors that.
+    var trimmed = trimmedValue();
+    var trimmedLen = byteLength(trimmed);
 
-      // If truncated content is non-empty-after-trim, enable submit.
-      // The too-long hint persists until the next keystroke that stays
-      // within limit (at which point revalidate() shows "Ready").
-      var trimmed = trimmedValue();
-      submitBtn.disabled = trimmed.length === 0;
+    if (trimmedLen > MAX_BYTES) {
+      // Trimmed content exceeds limit — truncate trimmed, replace textarea.
+      // Whitespace is stripped so the byte budget applies to meaning only.
+      el.value = truncateToByteLimit(trimmed, MAX_BYTES);
+      submitBtn.disabled = false;
       setHint("Content exceeds the maximum length of 2048 bytes.");
       return;
     }

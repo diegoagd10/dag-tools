@@ -64,6 +64,27 @@ test.describe("QR Code Tool client gating", () => {
     await expect(submitBtn).toBeDisabled();
   });
 
+  test("whitespace-surrounded content not truncated — trim applied first", async ({
+    page,
+  }) => {
+    await page.goto("/links/qr");
+
+    const textarea = page.getByTestId("qr-content-input");
+    const submitBtn = page.getByTestId("qr-submit-button");
+    const hint = page.getByTestId("qr-hint");
+
+    // Lots of whitespace + short valid content: trimmed is well under limit.
+    // Server trims first, client mirrors that — should be enabled, not truncated.
+    const spaces = " ".repeat(3000);
+    await textarea.fill(spaces + "hello" + spaces);
+    await expect(submitBtn).toBeEnabled();
+    await expect(hint).toContainText("Ready");
+
+    // The trimmed value should still be "hello"
+    const raw = await textarea.inputValue();
+    expect(raw.trim()).toBe("hello");
+  });
+
   test("input truncated at 2048 bytes, too-long hint surfaces", async ({
     page,
   }) => {
