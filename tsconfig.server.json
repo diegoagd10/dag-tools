@@ -12,13 +12,13 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": ["node_modules"]
+    "src/server/**/*.ts",
+    "src/server/**/*.tsx"
+  ]
 }

@@ -5,9 +5,9 @@ These rules apply to every commit on every branch. The reviewer (`.sandcastle/re
 ## Style
 
 - **TypeScript only.** `tsconfig.json` is authoritative: `strict: true`, `target: ES2017`, `module: esnext`, `moduleResolution: bundler`.
-- **ESLint config is authoritative** (`eslint.config.mjs`, extends `eslint-config-next` 16.2.9). No project-local overrides without a brief justification in the diff.
+- **ESLint config is authoritative** (`eslint.config.mjs`). No project-local overrides without a brief justification in the diff.
 - **Imports**: the `@/*` alias (defined in `tsconfig.json paths`) resolves to `./src/*`. Use it for cross-module imports inside `src/`.
-- **Named exports** for components and modules. No default exports for components. (`page.tsx` / `layout.tsx` Next.js convention files are the documented exception.)
+- **Named exports** for components and modules. No default exports for components.
 - **No `any`** in committed code. Use `unknown` + narrowing, or a precise type. An `eslint-disable-next-line @typescript-eslint/no-explicit-any` requires a one-line justification comment.
 - **Prefer `type` over `interface`** for object shapes. Use `interface` only when declaration merging or `extends` is genuinely needed.
 - **Line length** follows the ESLint config (do not hand-tune; rely on `pnpm run lint`).
@@ -21,10 +21,9 @@ These rules apply to every commit on every branch. The reviewer (`.sandcastle/re
 
 ## Architecture
 
-- **Next.js App Router** under `src/app/`. Routes are folders; special files are `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`.
-- **API routes** under `src/app/api/`. Use route handlers (`route.ts`), not the Pages-Router `pages/api/` style.
+- **Hono server** under `src/server/`. Views are JSX components under `src/server/views/`.
 - **Domain vocabulary** in `CONTEXT.md` is authoritative. Use `_Tool_`, `_File Tool_`, `_Link Tool_`, `_Source PDF_`, `_Artifact_`, `_Share Link_`, `_Share ID_`, `_Combined PDF_`, `_Split PDF_`, `_Merge Order_`, `_Server-Side Processing_`, etc. in code, comments, and user-facing strings. Avoid the synonyms listed in the glossary's "Avoid" column.
-- **No new top-level directories** without a brief justification in the diff. The layout (`src/{app,components,lib}` + `tests/{unit,e2e,fixtures}`) is the established skeleton.
+- **No new top-level directories** without a brief justification in the diff. The layout (`src/server` + `tests/{unit,integration,e2e,fixtures}`) is the established skeleton.
 
 ## Commits
 
