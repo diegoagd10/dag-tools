@@ -27,23 +27,20 @@
 
   /**
    * Truncate string to at most maxBytes UTF-8 bytes without splitting
-   * multi-byte characters. Iterates codepoints until the accumulator
-   * would exceed the limit, then stops.
+   * multi-byte or surrogate-pair characters. Uses Array.from() to
+   * iterate code points, then TextEncoder to count bytes per point.
    */
   function truncateToByteLimit(str, maxBytes) {
+    var points = Array.from(str);
     var acc = 0;
-    var i = 0;
-    while (i < str.length) {
-      var char = str[i];
-      var code = char.codePointAt(0);
-      var charBytes = 1;
-      if (code > 0x7f) charBytes = code > 0x7ff ? (code > 0xffff ? 4 : 3) : 2;
-      if (acc + charBytes > maxBytes) break;
-      acc += charBytes;
-      // Advance by surrogate-pair width if needed
-      i += code >= 0x10000 ? 2 : 1;
+    for (var i = 0; i < points.length; i++) {
+      var bytes = encoder.encode(points[i]).length;
+      if (acc + bytes > maxBytes) {
+        return points.slice(0, i).join("");
+      }
+      acc += bytes;
     }
-    return str.slice(0, i);
+    return str;
   }
 
   function setHint(text) {
@@ -77,10 +74,19 @@
     var el = e.target;
     var raw = el.value;
 
-    // Truncate raw input to byte limit (safe, no multi-byte split)
-    var truncated = truncateToByteLimit(raw, MAX_BYTES);
-    if (truncated !== raw) {
-      el.value = truncated;
+    // Check over-limit BEFORE truncating so the too-long hint surfaces.
+    // Server applies the byte limit to trimmed content; we match that here.
+    var rawLen = byteLength(raw);
+    if (rawLen > MAX_BYTES) {
+      el.value = truncateToByteLimit(raw, MAX_BYTES);
+
+      // If truncated content is non-empty-after-trim, enable submit.
+      // The too-long hint persists until the next keystroke that stays
+      // within limit (at which point revalidate() shows "Ready").
+      var trimmed = trimmedValue();
+      submitBtn.disabled = trimmed.length === 0;
+      setHint("Content exceeds the maximum length of 2048 bytes.");
+      return;
     }
 
     revalidate();

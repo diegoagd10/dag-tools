@@ -64,7 +64,9 @@ test.describe("QR Code Tool client gating", () => {
     await expect(submitBtn).toBeDisabled();
   });
 
-  test("input truncated at 2048 bytes, stays within limit", async ({ page }) => {
+  test("input truncated at 2048 bytes, too-long hint surfaces", async ({
+    page,
+  }) => {
     await page.goto("/links/qr");
 
     const textarea = page.getByTestId("qr-content-input");
@@ -77,18 +79,64 @@ test.describe("QR Code Tool client gating", () => {
     await expect(submitBtn).toBeEnabled();
     await expect(hint).toContainText("Ready");
 
-    // Add one more byte — should be truncated back to 2048
+    // Add one more byte — should be truncated and show too-long hint
     await textarea.fill(atLimit + "b");
     const afterOneMore = await textarea.inputValue();
     expect(new TextEncoder().encode(afterOneMore).length).toBe(2048);
     await expect(submitBtn).toBeEnabled();
+    await expect(hint).toHaveText(
+      "Content exceeds the maximum length of 2048 bytes.",
+    );
 
-    // Paste 3000 bytes — should be truncated
+    // After clearing to valid content, hint returns to Ready
+    await textarea.fill("hello");
+    await expect(submitBtn).toBeEnabled();
+    await expect(hint).toContainText("Ready");
+
+    // Paste 3000 bytes — should be truncated, too-long hint shown
     const overLimit = "x".repeat(3000);
     await textarea.fill(overLimit);
     const truncated = await textarea.inputValue();
     expect(new TextEncoder().encode(truncated).length).toBeLessThanOrEqual(2048);
     await expect(submitBtn).toBeEnabled();
+    await expect(hint).toHaveText(
+      "Content exceeds the maximum length of 2048 bytes.",
+    );
+  });
+
+  test("surrogate-pair (emoji) truncation does not split chars", async ({
+    page,
+  }) => {
+    await page.goto("/links/qr");
+
+    const textarea = page.getByTestId("qr-content-input");
+    const submitBtn = page.getByTestId("qr-submit-button");
+    const hint = page.getByTestId("qr-hint");
+
+    // "😀" is 4 bytes (surrogate pair). 512 × 4 = 2048 — exactly at limit.
+    const atLimit = "😀".repeat(512);
+    await textarea.fill(atLimit);
+    await expect(submitBtn).toBeEnabled();
+    await expect(hint).toContainText("Ready");
+
+    // Verify no characters were lost
+    const value = await textarea.inputValue();
+    expect(value.length).toBe(1024); // 512 emoji × 2 UTF-16 code units
+    expect(new TextEncoder().encode(value).length).toBe(2048);
+
+    // Add one more — truncated back, too-long hint, no split emoji
+    await textarea.fill(atLimit + "😀");
+    const truncated = await textarea.inputValue();
+    expect(new TextEncoder().encode(truncated).length).toBe(2048);
+    await expect(hint).toHaveText(
+      "Content exceeds the maximum length of 2048 bytes.",
+    );
+
+    // Every code point should be intact "😀" (codePointAt >= 0x1f600),
+    // no garbled surrogate halves.
+    for (const ch of truncated) {
+      expect(ch.codePointAt(0)).toBeGreaterThanOrEqual(0x1f600);
+    }
   });
 
   test("multi-byte character truncation does not split characters", async ({
