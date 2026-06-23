@@ -18,6 +18,7 @@ export const QrSharePanel = ({ id }: { id: string }) => {
             type="text"
             value={url}
             readonly
+            onclick="this.select()"
             class="flex-1 rounded border border-hairline bg-paper px-3 py-2 font-mono text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <a
