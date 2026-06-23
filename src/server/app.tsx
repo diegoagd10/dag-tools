@@ -9,6 +9,10 @@ import { PDFDocument } from "pdf-lib";
 import { Home } from "./views/Home";
 import { PdfCombine } from "./views/PdfCombine";
 import { PdfSplit } from "./views/PdfSplit";
+import { QrCode } from "./views/QrCode";
+import { QrSharePage } from "./views/QrSharePage";
+import { QrSharePanel } from "./views/QrSharePanel";
+import { QrErrorPanel } from "./views/QrErrorPanel";
 import { SourcePdfRow } from "./views/SourcePdfRow";
 import { ShareLinkPanel } from "./views/ShareLinkPanel";
 import { CombineErrorPanel } from "./views/CombineErrorPanel";
@@ -16,7 +20,10 @@ import { ArtifactNotFound } from "./views/ArtifactNotFound";
 import { SplitErrorPanel } from "./views/SplitErrorPanel";
 import { mergePdfs } from "./merge-pdfs";
 import { persistArtifact } from "./artifacts";
+import { persistTextArtifact } from "./persist-text-artifact";
 import { splitPdfs } from "./split-pdfs";
+import { renderQrPng } from "./qr";
+import { validateQrContent } from "./qr-validate";
 
 export type AppDeps = { db: Database.Database; storageDir: string };
 
@@ -44,6 +51,13 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
     void db;
     void storageDir;
     return c.html(<PdfSplit />);
+  });
+
+  // QR Code Tool form page
+  app.get("/links/qr", (c) => {
+    void db;
+    void storageDir;
+    return c.html(<QrCode />);
   });
 
   // GET /pdf/combine/row — return a Source PDF row fragment for hx-get
@@ -307,6 +321,67 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
       size: file.size,
       name: file.name,
     });
+  });
+
+  // POST /api/v1/links/qr — create QR Code artifact
+  app.post("/api/v1/links/qr", async (c) => {
+    const formData = await c.req.formData();
+    const rawContent = (formData.get("content") as string) ?? "";
+
+    // Validate (trim, empty-after-trim, byte limit)
+    const validation = validateQrContent(rawContent);
+    if (!validation.valid) {
+      return c.html(<QrErrorPanel reason={validation.error} />, 422);
+    }
+
+    // Persist text artifact
+    const { id } = persistTextArtifact(db, {
+      tool: "links/qr",
+      textContent: validation.content,
+    });
+
+    return c.html(<QrSharePanel id={id} />);
+  });
+
+  // GET /links/qr/:id — serve QR Share page (HTML) or PNG image
+  app.get("/links/qr/:id", async (c) => {
+    const param = c.req.param("id");
+
+    // If param ends with .png, serve the PNG image
+    if (param.endsWith(".png")) {
+      const id = param.slice(0, -4);
+
+      const row = db
+        .prepare("SELECT text_content FROM artifacts WHERE id = ? AND tool = 'links/qr'")
+        .get(id) as { text_content: string } | undefined;
+
+      if (!row) {
+        return c.body(null, 404);
+      }
+
+      const png = await renderQrPng(row.text_content);
+
+      return c.body(png as never, 200, {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      });
+    }
+
+    // Otherwise, serve the HTML share page
+    const row = db
+      .prepare("SELECT id FROM artifacts WHERE id = ? AND tool = 'links/qr'")
+      .get(param);
+
+    if (!row) {
+      return c.html(
+        <ArtifactNotFound
+          backLink={{ href: "/links/qr", label: "Back to QR Code" }}
+        />,
+        404,
+      );
+    }
+
+    return c.html(<QrSharePage id={param} />);
   });
 
   // GET /pdf/split/:id — serve the Split ZIP or return 404

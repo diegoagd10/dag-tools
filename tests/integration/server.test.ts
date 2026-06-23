@@ -21,7 +21,7 @@ describe("Home route", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with both tool cards (PDF Combine and PDF Split) on /", async () => {
+  it("returns 200 with all three tool cards (PDF Combine, PDF Split, QR Code) on /", async () => {
     const app = createApp({ db, storageDir });
     const res = await app.request("/");
 
@@ -30,6 +30,7 @@ describe("Home route", () => {
     const text = await res.text();
     expect(text).toContain("PDF Combine");
     expect(text).toContain("PDF Split");
+    expect(text).toContain("QR Code");
   });
 
   it("returns HTML content type", async () => {

@@ -26,7 +26,7 @@ export const Home = () => {
           >
             Available now
           </h2>
-          <span class="font-mono text-[11px] text-muted">02 of 02</span>
+          <span class="font-mono text-[11px] text-muted">03 of 03</span>
         </div>
 
         <a
@@ -88,6 +88,38 @@ export const Home = () => {
               <p class="max-w-md text-sm leading-relaxed text-ink-soft">
                 Break a PDF into one file per page and download the pages as a
                 single ZIP archive.
+              </p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/links/qr"
+          class="block rounded-lg bg-surface p-6 transition-colors duration-150 hover:bg-surface-hover"
+        >
+          <div class="flex items-start gap-4">
+            <div class="h-10 w-10 shrink-0 text-ink-soft" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
+            </div>
+            <div class="flex flex-col gap-2">
+              <h2 class="font-sans text-2xl font-medium leading-tight tracking-[-0.01em] text-ink">
+                QR Code
+              </h2>
+              <p class="max-w-md text-sm leading-relaxed text-ink-soft">
+                Paste a URL or any text to generate a QR Code. Get a shareable
+                link with a downloadable PNG image.
               </p>
             </div>
           </div>
