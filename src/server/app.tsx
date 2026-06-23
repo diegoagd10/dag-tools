@@ -326,10 +326,15 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
   // POST /api/v1/links/qr — create QR Code artifact
   app.post("/api/v1/links/qr", async (c) => {
     const formData = await c.req.formData();
-    const rawContent = (formData.get("content") as string) ?? "";
+    const raw = formData.get("content");
+
+    // Reject non-string values (file upload, etc.) before validation
+    if (typeof raw !== "string") {
+      return c.html(<QrErrorPanel reason="empty" />, 422);
+    }
 
     // Validate (trim, empty-after-trim, byte limit)
-    const validation = validateQrContent(rawContent);
+    const validation = validateQrContent(raw);
     if (!validation.valid) {
       return c.html(<QrErrorPanel reason={validation.error} />, 422);
     }
