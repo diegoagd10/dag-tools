@@ -81,7 +81,7 @@
       // Trimmed content exceeds limit — truncate trimmed, replace textarea.
       // Whitespace is stripped so the byte budget applies to meaning only.
       el.value = truncateToByteLimit(trimmed, MAX_BYTES);
-      submitBtn.disabled = false;
+      submitBtn.disabled = true;
       setHint("Content exceeds the maximum length of 2048 bytes.");
       return;
     }

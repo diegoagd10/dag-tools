@@ -101,10 +101,11 @@ test.describe("QR Code Tool client gating", () => {
     await expect(hint).toContainText("Ready");
 
     // Add one more byte — should be truncated and show too-long hint
+    // Submit stays disabled until user edits (gating state must be consistent)
     await textarea.fill(atLimit + "b");
     const afterOneMore = await textarea.inputValue();
     expect(new TextEncoder().encode(afterOneMore).length).toBe(2048);
-    await expect(submitBtn).toBeEnabled();
+    await expect(submitBtn).toBeDisabled();
     await expect(hint).toHaveText(
       "Content exceeds the maximum length of 2048 bytes.",
     );
@@ -114,12 +115,12 @@ test.describe("QR Code Tool client gating", () => {
     await expect(submitBtn).toBeEnabled();
     await expect(hint).toContainText("Ready");
 
-    // Paste 3000 bytes — should be truncated, too-long hint shown
+    // Paste 3000 bytes — should be truncated, too-long hint, submit disabled
     const overLimit = "x".repeat(3000);
     await textarea.fill(overLimit);
     const truncated = await textarea.inputValue();
     expect(new TextEncoder().encode(truncated).length).toBeLessThanOrEqual(2048);
-    await expect(submitBtn).toBeEnabled();
+    await expect(submitBtn).toBeDisabled();
     await expect(hint).toHaveText(
       "Content exceeds the maximum length of 2048 bytes.",
     );
@@ -145,10 +146,11 @@ test.describe("QR Code Tool client gating", () => {
     expect(value.length).toBe(1024); // 512 emoji × 2 UTF-16 code units
     expect(new TextEncoder().encode(value).length).toBe(2048);
 
-    // Add one more — truncated back, too-long hint, no split emoji
+    // Add one more — truncated back, too-long hint, submit disabled, no split emoji
     await textarea.fill(atLimit + "😀");
     const truncated = await textarea.inputValue();
     expect(new TextEncoder().encode(truncated).length).toBe(2048);
+    await expect(submitBtn).toBeDisabled();
     await expect(hint).toHaveText(
       "Content exceeds the maximum length of 2048 bytes.",
     );
