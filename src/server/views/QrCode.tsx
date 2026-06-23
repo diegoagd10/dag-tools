@@ -36,6 +36,11 @@ export const QrCode = () => {
             placeholder="https://example.com or any text…"
             autofocus
           />
+          <p
+            id="qr-hint"
+            data-testid="qr-hint"
+            class="text-xs text-ink-soft"
+          />
         </div>
 
         <button
@@ -52,7 +57,7 @@ export const QrCode = () => {
         id="qr-indicator"
         class="htmx-indicator mt-4 text-sm text-ink-soft"
       >
-        Generating…
+        Creating…
       </div>
 
       <div id="qr-result" />
