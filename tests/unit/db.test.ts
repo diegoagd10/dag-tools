@@ -41,6 +41,50 @@ describe("initDb", () => {
     db.close();
   });
 
+  it("migrates old-style NOT NULL file columns to nullable", () => {
+    const db = new Database(":memory:");
+
+    // Create table with old NOT NULL constraints (simulating pre-migration schema)
+    db.exec(`
+      CREATE TABLE artifacts (
+        id TEXT PRIMARY KEY,
+        tool TEXT NOT NULL,
+        filename TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        ext TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        page_count INTEGER,
+        text_content TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT,
+        creator_token TEXT
+      )
+    `);
+
+    // initDb should detect old constraints and migrate
+    initDb(db);
+
+    // After migration, file columns should be nullable
+    const cols = db
+      .prepare("PRAGMA table_info(artifacts)")
+      .all() as Array<{ name: string; notnull: number }>;
+
+    for (const col of cols) {
+      if (["filename", "mime_type", "ext", "size"].includes(col.name)) {
+        expect(col.notnull).toBe(0);
+      }
+    }
+
+    // Should be able to insert a text-only artifact with NULL file columns
+    expect(() =>
+      db
+        .prepare("INSERT INTO artifacts (id, tool, text_content) VALUES (?, ?, ?)")
+        .run("migrated-id", "links/qr", "test content"),
+    ).not.toThrow();
+
+    db.close();
+  });
+
   it("enables WAL mode on file-based databases", () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "dag-tools-test-"));
     const dbPath = join(tmpDir, "test.db");
