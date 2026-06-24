@@ -46,6 +46,41 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
           />
         </div>
 
+        {/* File Summary — hidden until a valid Source PDF is chosen.
+            Populated client-side from POST /api/v1/pdf/split/validate
+            (pageCount, size, name). Read-only: no second PDF parse on
+            the client, no inputs. */}
+        <section
+          id="split-file-summary"
+          data-testid="split-file-summary"
+          class="hidden mt-2 rounded border border-hairline bg-paper px-4 py-3"
+          aria-live="polite"
+        >
+          <p
+            id="split-summary-name"
+            data-testid="split-summary-name"
+            class="font-sans text-sm font-medium text-ink"
+          />
+          <p
+            id="split-summary-meta"
+            data-testid="split-summary-meta"
+            class="mt-1 font-sans text-xs text-muted tabular-nums"
+          />
+          <p
+            id="split-summary-task-line"
+            data-testid="split-summary-task-line"
+            class="mt-2 font-sans text-xs text-ink-soft"
+          >
+            Task PDF Splitting · Mode Extract All · Output{" "}
+            <span
+              id="split-summary-output"
+              data-testid="split-summary-output"
+            >
+              N Files (.zip)
+            </span>
+          </p>
+        </section>
+
         <button
           id="split-btn"
           data-testid="split-button"

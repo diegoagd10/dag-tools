@@ -21,6 +21,37 @@
     return bytes + " B";
   }
 
+  // File Summary is populated from the validate preflight response — no
+  // second PDF parse on the client. Hidden until a valid Source PDF is
+  // chosen; hidden again on every failure / no-file branch.
+  function hideSummary() {
+    var summary = document.getElementById("split-file-summary");
+    if (summary) summary.classList.add("hidden");
+  }
+
+  function showSummary(name, pageCount, bytes) {
+    var summary = document.getElementById("split-file-summary");
+    if (!summary) return;
+
+    var nameEl = document.getElementById("split-summary-name");
+    if (nameEl) nameEl.textContent = name;
+
+    var metaEl = document.getElementById("split-summary-meta");
+    if (metaEl) {
+      var pagesText =
+        pageCount === 1 ? "1 page" : pageCount + " pages";
+      metaEl.textContent = pagesText + " • " + formatBytes(bytes);
+    }
+
+    var outputEl = document.getElementById("split-summary-output");
+    if (outputEl) {
+      var filesWord = pageCount === 1 ? "File" : "Files";
+      outputEl.textContent = pageCount + " " + filesWord + " (.zip)";
+    }
+
+    summary.classList.remove("hidden");
+  }
+
   function revalidate() {
     var input = document.getElementById("split-file-input");
     var rejectionEl = document.getElementById("split-file-rejection");
@@ -41,6 +72,7 @@
       splitBtn.disabled = true;
       splitBtn.textContent = "Split";
       if (hintEl) hintEl.style.display = "block";
+      hideSummary();
       return;
     }
 
@@ -52,6 +84,7 @@
       splitBtn.disabled = true;
       splitBtn.textContent = "Split";
       if (hintEl) hintEl.style.display = "none";
+      hideSummary();
       return;
     }
 
@@ -66,6 +99,7 @@
       splitBtn.disabled = true;
       splitBtn.textContent = "Split";
       if (hintEl) hintEl.style.display = "none";
+      hideSummary();
       return;
     }
 
@@ -76,6 +110,7 @@
         splitBtn.disabled = true;
         splitBtn.textContent = "Split";
         if (hintEl) hintEl.style.display = "none";
+        hideSummary();
         return;
       }
 
@@ -83,6 +118,7 @@
       splitBtn.disabled = true;
       splitBtn.textContent = "Validating…";
       if (hintEl) hintEl.style.display = "none";
+      hideSummary();
 
       // Abort any in-flight validation for a previous file
       if (validationAbort) {
@@ -113,10 +149,11 @@
           );
           splitBtn.disabled = true;
           splitBtn.textContent = "Split";
+          hideSummary();
           return;
         }
 
-        // Valid — page count known
+        // Valid — page count known from the validate preflight
         if (rejectionEl) {
           rejectionEl.textContent = "";
           rejectionEl.classList.add("hidden");
@@ -125,6 +162,7 @@
           result.pageCount === 1 ? "1 page" : result.pageCount + " pages";
         splitBtn.disabled = false;
         splitBtn.textContent = "Split (" + pagesText + ")";
+        showSummary(result.name || file.name, result.pageCount, result.size);
       });
     });
   }
