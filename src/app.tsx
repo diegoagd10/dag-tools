@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import type Database from "better-sqlite3";
 import { register as registerHome } from "@/routes/web/home";
+import { register as registerHelp } from "@/routes/web/help";
 import { register as registerPdfCombineWeb } from "@/routes/web/pdf-combine";
 import { register as registerPdfSplitWeb } from "@/routes/web/pdf-split";
 import { register as registerQrWeb } from "@/routes/web/qr";
@@ -17,6 +18,7 @@ export function createApp({ db, storageDir }: AppDeps): Hono {
   app.use("/static/*", serveStatic({ root: "./" }));
 
   registerHome(app, { db, storageDir });
+  registerHelp(app, { db, storageDir });
   registerPdfCombineWeb(app, { db, storageDir });
   registerPdfSplitWeb(app, { db, storageDir });
   registerQrWeb(app, { db, storageDir });
