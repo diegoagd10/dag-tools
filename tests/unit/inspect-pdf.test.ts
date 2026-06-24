@@ -86,4 +86,13 @@ describe("inspectPdf", () => {
       expect(result.reason).toBe("not-a-pdf");
     }
   });
+
+  it("returns not ok with reason not-a-pdf for partial magic bytes (%P but not %PDF)", async () => {
+    const result = await inspectPdf(new Uint8Array([0x25, 0x50, 0x00, 0x00]));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("not-a-pdf");
+    }
+  });
 });

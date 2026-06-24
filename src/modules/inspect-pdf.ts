@@ -5,7 +5,7 @@ export type Inspection =
   | { ok: false; reason: PdfDefect };
 
 export async function inspectPdf(bytes: Uint8Array): Promise<Inspection> {
-  if (bytes.length < 4 || bytes[0] !== 0x25 || bytes[1] !== 0x50) {
+  if (bytes.length < 4 || bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46) {
     return { ok: false, reason: "not-a-pdf" };
   }
 
