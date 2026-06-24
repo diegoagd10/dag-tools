@@ -4,6 +4,8 @@ A web application that hosts multiple independent file-manipulation utilities ("
 
 All Tool processing is server-side. Files traverse the Hono backend; Artifacts are stored on the filesystem with metadata in SQLite; every Tool produces a Share Link.
 
+Implemented Tools: PDF Combine, PDF Split. Planned: QR Code, PDF to EPUB (PDF to EPUB currently ships UI only — a form page with a disabled Convert control; no backend conversion yet).
+
 All user-facing strings are in English.
 
 ## Language
@@ -51,6 +53,14 @@ _Avoid_: page PDF, output PDF
 **PDF Split Tool**:
 A File Tool that takes 1 Source PDF and produces N Split PDFs (one per page of the Source PDF) bundled in a single downloadable archive. Form at `/pdf/split`, API at `POST /api/v1/pdf/split`, Share Link at `/pdf/split/:id`.
 _Avoid_: PDF splitter, PDF page extractor
+
+**EPUB Document** *[planned]*:
+The reflowable ebook file produced as the output of the PDF to EPUB Tool. Intended storage `./storage/<id>.epub`, served from `/pdf/epub/:id` with `Content-Disposition: attachment`. Conversion is not yet implemented, so no EPUB Document is produced today.
+_Avoid_: ebook, converted file, output EPUB
+
+**PDF to EPUB Tool** *[planned]*:
+A File Tool that takes 1 Source PDF and produces one EPUB Document. Form at `/pdf/epub`. Backend is **not implemented**: the form page exists and reuses Source PDF validation, but the Convert control is permanently disabled with an inline "coming soon" note, and no API endpoint or Share Link is wired (`POST /api/v1/pdf/epub` and `/pdf/epub/:id` are reserved for when conversion lands).
+_Avoid_: EPUB converter, ebook tool, PDF-to-ebook
 
 **QR Content** *[planned]*:
 The text string encoded into a QR Code by the QR Code Tool. May be a URL or plain text — the Tool does not distinguish between them. Stored inline in the `artifacts` table's `text_content` column.
