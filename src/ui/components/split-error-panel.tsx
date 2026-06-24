@@ -1,11 +1,13 @@
 /** @jsxImportSource hono/jsx */
 
+import type { PdfDefect } from "@/modules/inspect-pdf";
+
 export const SplitErrorPanel = ({
   filename,
   reason,
 }: {
   filename: string;
-  reason: "encrypted" | "corrupt" | "too-few-pages" | "not-a-pdf" | "oversize";
+  reason: PdfDefect | "too-few-pages" | "oversize";
 }) => {
   const messages: Record<string, string> = {
     encrypted: `"${filename}" is password-protected and cannot be split. Use an unprotected PDF instead.`,

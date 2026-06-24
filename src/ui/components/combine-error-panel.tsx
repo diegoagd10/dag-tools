@@ -1,16 +1,21 @@
 /** @jsxImportSource hono/jsx */
 
+import type { PdfDefect } from "@/modules/inspect-pdf";
+
 export const CombineErrorPanel = ({
   filename,
   reason,
 }: {
   filename: string;
-  reason: "encrypted" | "corrupt";
+  reason: PdfDefect;
 }) => {
-  const message =
-    reason === "encrypted"
-      ? `"${filename}" is password-protected and cannot be combined. Remove the file and try again.`
-      : `"${filename}" is corrupt or unreadable and cannot be combined. Remove the file and try again.`;
+  const messages: Record<PdfDefect, string> = {
+    encrypted: `"${filename}" is password-protected and cannot be combined. Remove the file and try again.`,
+    corrupt: `"${filename}" is corrupt or unreadable and cannot be combined. Remove the file and try again.`,
+    "not-a-pdf": `"${filename}" is not a valid PDF and cannot be combined. Remove the file and try again.`,
+  };
+
+  const message = messages[reason];
 
   return (
     <div id="combine-result">

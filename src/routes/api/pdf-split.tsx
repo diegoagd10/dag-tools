@@ -2,6 +2,7 @@
 
 import type { Hono } from "hono";
 import type { AppDeps } from "@/app";
+import { inspectPdf } from "@/modules/inspect-pdf";
 import { splitPdfs } from "@/modules/split-pdfs";
 import { persistArtifact } from "@/server/artifacts";
 import { ShareLinkPanel } from "@/ui/components/share-link-panel";
@@ -38,34 +39,23 @@ export function register(app: Hono, deps: AppDeps): void {
     }
 
     const buf = new Uint8Array(await file.arrayBuffer());
-    if (buf.length < 4 || buf[0] !== 0x25 || buf[1] !== 0x50) {
+    const inspection = await inspectPdf(buf);
+
+    if (!inspection.ok) {
       return c.html(
-        <SplitErrorPanel filename={file.name} reason="not-a-pdf" />,
+        <SplitErrorPanel filename={file.name} reason={inspection.reason} />,
         422,
       );
     }
 
-    let pageCount: number;
-    try {
-      const { PDFDocument } = await import("pdf-lib");
-      const doc = await PDFDocument.load(buf);
-      pageCount = doc.getPageCount();
-      if (pageCount < 1) {
-        return c.html(
-          <SplitErrorPanel filename={file.name} reason="too-few-pages" />,
-          422,
-        );
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const isEncrypted = message.includes("is encrypted");
-      const reason = isEncrypted ? "encrypted" : "corrupt";
+    if (inspection.pageCount < 1) {
       return c.html(
-        <SplitErrorPanel filename={file.name} reason={reason} />,
+        <SplitErrorPanel filename={file.name} reason="too-few-pages" />,
         422,
       );
     }
 
+    const pageCount = inspection.pageCount;
     const zipBytes = await splitPdfs(buf);
 
     const today = new Date().toISOString().slice(0, 10);
@@ -114,30 +104,22 @@ export function register(app: Hono, deps: AppDeps): void {
     }
 
     const buf = new Uint8Array(await file.arrayBuffer());
-    if (buf.length < 4 || buf[0] !== 0x25 || buf[1] !== 0x50) {
-      return c.json({ valid: false, reason: "not-a-pdf" });
-    }
+    const inspection = await inspectPdf(buf);
 
-    let pageCount: number;
-    try {
-      const { PDFDocument } = await import("pdf-lib");
-      const doc = await PDFDocument.load(buf);
-      pageCount = doc.getPageCount();
-      if (pageCount < 1) {
-        return c.json({ valid: false, reason: "too-few-pages" });
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const isEncrypted = message.includes("is encrypted");
+    if (!inspection.ok) {
       return c.json({
         valid: false,
-        reason: isEncrypted ? "encrypted" : "corrupt",
+        reason: inspection.reason,
       });
+    }
+
+    if (inspection.pageCount < 1) {
+      return c.json({ valid: false, reason: "too-few-pages" });
     }
 
     return c.json({
       valid: true,
-      pageCount,
+      pageCount: inspection.pageCount,
       size: file.size,
       name: file.name,
     });

@@ -1,8 +1,8 @@
 /** @jsxImportSource hono/jsx */
 
 import type { Hono } from "hono";
-import { PDFDocument } from "pdf-lib";
 import type { AppDeps } from "@/app";
+import { inspectPdf } from "@/modules/inspect-pdf";
 import { mergePdfs } from "@/modules/merge-pdfs";
 import { persistArtifact } from "@/server/artifacts";
 import { ShareLinkPanel } from "@/ui/components/share-link-panel";
@@ -38,29 +38,19 @@ export function register(app: Hono, deps: AppDeps): void {
     const buffers: Uint8Array[] = [];
     for (const file of files) {
       const buf = new Uint8Array(await file.arrayBuffer());
-      if (buf.length < 4 || buf[0] !== 0x25 || buf[1] !== 0x50) {
-        return c.json(
-          { error: `"${file.name}" is not a valid PDF file.` },
-          400,
-        );
-      }
       buffers.push(buf);
     }
 
     let pageCount = 0;
     for (let i = 0; i < buffers.length; i++) {
-      try {
-        const doc = await PDFDocument.load(buffers[i]);
-        pageCount += doc.getPageCount();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const isEncrypted = message.includes("is encrypted");
-        const reason = isEncrypted ? "encrypted" : "corrupt";
+      const inspection = await inspectPdf(buffers[i]);
+      if (!inspection.ok) {
         return c.html(
-          <CombineErrorPanel filename={files[i].name} reason={reason} />,
+          <CombineErrorPanel filename={files[i].name} reason={inspection.reason} />,
           422,
         );
       }
+      pageCount += inspection.pageCount;
     }
 
     const combined = await mergePdfs(buffers);
