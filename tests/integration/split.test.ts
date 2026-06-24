@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
 import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
-import { createApp } from "@/server/app";
+import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";

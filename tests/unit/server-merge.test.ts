@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { mergePdfs } from "@/server/merge-pdfs";
+import { mergePdfs } from "@/modules/merge-pdfs";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 

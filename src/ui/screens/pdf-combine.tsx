@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 
-import { Layout } from "./Layout";
-import { SourcePdfRow } from "./SourcePdfRow";
+import { Layout } from "@/ui/layout";
+import { SourcePdfRow } from "@/ui/components/source-pdf-row";
 
 export const PdfCombine = () => {
   return (

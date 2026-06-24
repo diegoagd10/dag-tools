@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
 
-import { Layout } from "./Layout";
+import { Layout } from "@/ui/layout";
 
 export const QrSharePage = ({ id }: { id: string }) => {
   const pngUrl = `/links/qr/${id}.png`;

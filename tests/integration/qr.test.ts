@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
-import { createApp } from "@/server/app";
+import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
