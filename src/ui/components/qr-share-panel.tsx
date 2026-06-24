@@ -2,6 +2,7 @@
 
 export const QrSharePanel = ({ id }: { id: string }) => {
   const url = `/links/qr/${id}`;
+  const pngUrl = `/links/qr/${id}.png`;
 
   return (
     <div id="qr-result">
@@ -26,6 +27,14 @@ export const QrSharePanel = ({ id }: { id: string }) => {
             class="inline-flex items-center rounded bg-accent px-4 py-2 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
           >
             Open
+          </a>
+          <a
+            href={pngUrl}
+            download
+            data-testid="qr-download-png"
+            class="inline-flex items-center rounded border border-hairline bg-surface px-4 py-2 font-sans text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-hover"
+          >
+            Download PNG
           </a>
         </div>
         <p class="mt-4 text-xs text-muted">

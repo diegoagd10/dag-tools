@@ -13,54 +13,61 @@ export const QrCode = ({ currentPath }: { currentPath?: string }) => {
         created so anyone can open and download the image.
       </p>
 
-      <form
-        id="qr-form"
-        data-testid="qr-form"
-        hx-post="/api/v1/links/qr"
-        hx-target="#qr-result"
-        hx-swap="outerHTML"
-        hx-indicator="#qr-indicator"
-        hx-on--before-swap="if(event.detail.xhr.status === 422) event.detail.shouldSwap = true"
-        class="mt-8 flex w-full max-w-xl flex-col gap-4"
+      <div
+        data-testid="qr-columns"
+        class="mt-8 grid w-full gap-8 md:grid-cols-2"
       >
-        <div class="flex flex-col gap-1.5">
-          <label for="qr-content" class="font-sans text-sm font-medium text-ink">
-            QR Content
-          </label>
-          <textarea
-            id="qr-content"
-            name="content"
-            data-testid="qr-content-input"
-            rows={4}
-            class="rounded border border-hairline bg-paper px-3 py-2 font-mono text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-            placeholder="https://example.com or any text…"
-            autofocus
-          />
-          <p
-            id="qr-hint"
-            data-testid="qr-hint"
-            class="text-xs text-ink-soft"
-          />
+        <div class="flex flex-col gap-4">
+          <form
+            id="qr-form"
+            data-testid="qr-form"
+            hx-post="/api/v1/links/qr"
+            hx-target="#qr-result"
+            hx-swap="outerHTML"
+            hx-indicator="#qr-indicator"
+            hx-on--before-swap="if(event.detail.xhr.status === 422) event.detail.shouldSwap = true"
+            class="flex w-full max-w-xl flex-col gap-4"
+          >
+            <div class="flex flex-col gap-1.5">
+              <label for="qr-content" class="font-sans text-sm font-medium text-ink">
+                QR Content
+              </label>
+              <textarea
+                id="qr-content"
+                name="content"
+                data-testid="qr-content-input"
+                rows={4}
+                class="rounded border border-hairline bg-paper px-3 py-2 font-mono text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="https://example.com or any text…"
+                autofocus
+              />
+              <p
+                id="qr-hint"
+                data-testid="qr-hint"
+                class="text-xs text-ink-soft"
+              />
+            </div>
+
+            <button
+              id="qr-submit"
+              data-testid="qr-submit-button"
+              type="submit"
+              class="inline-flex w-fit items-center rounded bg-accent px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
+            >
+              Generate QR Code
+            </button>
+          </form>
+
+          <div
+            id="qr-indicator"
+            class="htmx-indicator text-sm text-ink-soft"
+          >
+            Creating…
+          </div>
         </div>
 
-        <button
-          id="qr-submit"
-          data-testid="qr-submit-button"
-          type="submit"
-          class="inline-flex w-fit items-center rounded bg-accent px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
-        >
-          Generate QR Code
-        </button>
-      </form>
-
-      <div
-        id="qr-indicator"
-        class="htmx-indicator mt-4 text-sm text-ink-soft"
-      >
-        Creating…
+        <div id="qr-result" />
       </div>
-
-      <div id="qr-result" />
     </Layout>
   );
 };
