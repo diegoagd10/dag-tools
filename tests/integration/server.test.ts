@@ -40,6 +40,43 @@ describe("Home route", () => {
     expect(res.headers.get("content-type")).toContain("text/html");
   });
 
+  it("renders a restyled tool grid with the three working tools as links", async () => {
+    const app = createApp({ db, storageDir });
+    const res = await app.request("/");
+
+    const text = await res.text();
+
+    // Grid container using CSS grid layout.
+    expect(text).toContain('data-testid="tool-grid"');
+    expect(text).toMatch(/class="[^"]*\bgrid\b[^"]*grid-cols[^"]*"/);
+
+    // Each canonical card links to its working route.
+    expect(text).toContain('href="/pdf/combine"');
+    expect(text).toContain('href="/pdf/split"');
+    expect(text).toContain('href="/links/qr"');
+  });
+
+  it("counts only working tools in the available-now badge", async () => {
+    const app = createApp({ db, storageDir });
+    const res = await app.request("/");
+
+    const text = await res.text();
+    expect(text).toMatch(
+      /data-testid="tools-available-count"[^>]*>\s*3 of 3\s*</,
+    );
+  });
+
+  it("does not surface renamed cards or prohibited copy", async () => {
+    const app = createApp({ db, storageDir });
+    const res = await app.request("/");
+
+    const text = await res.text();
+    expect(text).not.toContain("Merge PDF");
+    expect(text).not.toContain("QR Code Generator");
+    expect(text).not.toContain("Sign In");
+    expect(text).not.toContain("My Files");
+  });
+
   describe("PDF Combine route", () => {
     it("returns 200 on /pdf/combine", async () => {
       const app = createApp({ db, storageDir });
