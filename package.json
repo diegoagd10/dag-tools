@@ -6,7 +6,7 @@
     "dev": "tsx watch --tsconfig tsconfig.server.json src/index.ts",
     "build": "pnpm run typecheck && pnpm run build:css",
     "start": "pnpm run build:css && tsx --tsconfig tsconfig.server.json src/index.ts",
-    "lint": "eslint",
+    "lint": "pnpm exec eslint",
     "typecheck": "tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
