@@ -2,9 +2,9 @@
 
 import { Layout } from "@/ui/layout";
 
-export const PdfSplit = () => {
+export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="PDF Split — dag-tools">
+    <Layout title="PDF Split — dag-tools" currentPath={currentPath}>
       <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
         PDF Split
       </h1>

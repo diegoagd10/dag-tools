@@ -2,9 +2,9 @@
 
 import { Layout } from "@/ui/layout";
 
-export const QrCode = () => {
+export const QrCode = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="QR Code — dag-tools">
+    <Layout title="QR Code — dag-tools" currentPath={currentPath}>
       <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
         QR Code
       </h1>

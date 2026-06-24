@@ -12,7 +12,7 @@ export function register(app: Hono, deps: AppDeps): void {
   const { db, storageDir } = deps;
 
   app.get("/pdf/combine", (c) => {
-    return c.html(<PdfCombine />);
+    return c.html(<PdfCombine currentPath={c.req.path} />);
   });
 
   app.get("/pdf/combine/row", (c) => {
@@ -28,12 +28,12 @@ export function register(app: Hono, deps: AppDeps): void {
       .get(id) as { filename: string; ext: string } | undefined;
 
     if (!row) {
-      return c.html(<ArtifactNotFound />, 404);
+      return c.html(<ArtifactNotFound currentPath={c.req.path} />, 404);
     }
 
     const filePath = join(storageDir, `${id}.${row.ext}`);
     if (!existsSync(filePath)) {
-      return c.html(<ArtifactNotFound />, 404);
+      return c.html(<ArtifactNotFound currentPath={c.req.path} />, 404);
     }
 
     const blob = readFileSync(filePath);

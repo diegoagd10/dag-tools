@@ -11,7 +11,7 @@ export function register(app: Hono, deps: AppDeps): void {
   const { db, storageDir } = deps;
 
   app.get("/pdf/split", (c) => {
-    return c.html(<PdfSplit />);
+    return c.html(<PdfSplit currentPath={c.req.path} />);
   });
 
   app.get("/pdf/split/:id", (c) => {
@@ -25,6 +25,7 @@ export function register(app: Hono, deps: AppDeps): void {
       return c.html(
         <ArtifactNotFound
           backLink={{ href: "/pdf/split", label: "Back to PDF Split" }}
+          currentPath={c.req.path}
         />,
         404,
       );
@@ -35,6 +36,7 @@ export function register(app: Hono, deps: AppDeps): void {
       return c.html(
         <ArtifactNotFound
           backLink={{ href: "/pdf/split", label: "Back to PDF Split" }}
+          currentPath={c.req.path}
         />,
         404,
       );

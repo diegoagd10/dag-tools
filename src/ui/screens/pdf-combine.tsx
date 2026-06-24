@@ -3,9 +3,9 @@
 import { Layout } from "@/ui/layout";
 import { SourcePdfRow } from "@/ui/components/source-pdf-row";
 
-export const PdfCombine = () => {
+export const PdfCombine = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="PDF Combine — dag-tools">
+    <Layout title="PDF Combine — dag-tools" currentPath={currentPath}>
       <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
         PDF Combine
       </h1>

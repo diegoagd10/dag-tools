@@ -2,9 +2,9 @@
 
 import { Layout } from "@/ui/layout";
 
-export const Home = () => {
+export const Home = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="dag-tools — A small workshop of file tools">
+    <Layout title="dag-tools — A small workshop of file tools" currentPath={currentPath}>
       <section class="flex flex-col gap-8">
         <h1 class="font-sans text-5xl font-medium leading-[1.02] tracking-[-0.028em] text-ink sm:text-6xl">
           Tools for working <span class="text-accent">with files</span>.

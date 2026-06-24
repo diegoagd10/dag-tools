@@ -11,7 +11,7 @@ export function register(app: Hono, deps: AppDeps): void {
   const { db } = deps;
 
   app.get("/links/qr", (c) => {
-    return c.html(<QrCode />);
+    return c.html(<QrCode currentPath={c.req.path} />);
   });
 
   app.get("/links/qr/:id", async (c) => {
@@ -44,11 +44,12 @@ export function register(app: Hono, deps: AppDeps): void {
       return c.html(
         <ArtifactNotFound
           backLink={{ href: "/links/qr", label: "Back to QR Code" }}
+          currentPath={c.req.path}
         />,
         404,
       );
     }
 
-    return c.html(<QrSharePage id={param} />);
+    return c.html(<QrSharePage id={param} currentPath={c.req.path} />);
   });
 }

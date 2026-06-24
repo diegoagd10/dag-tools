@@ -6,6 +6,6 @@ import { Home } from "@/ui/screens/home";
 
 export function register(app: Hono, _deps: AppDeps): void {
   app.get("/", (c) => {
-    return c.html(<Home />);
+    return c.html(<Home currentPath={c.req.path} />);
   });
 }
