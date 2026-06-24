@@ -24,13 +24,16 @@ export const SourcePdfRow = ({ index }: { index: number }) => {
         <label class="font-sans text-xs font-medium text-ink-soft">
           Source PDF {index}
         </label>
-        <input
+          <input
           type="file"
           name="files[]"
           accept=".pdf,application/pdf"
             class="w-full text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20"
           />
-          <span class="file-size hidden text-xs text-muted mt-0.5 tabular-nums"></span>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="file-size hidden text-xs text-muted tabular-nums" data-testid="file-size"></span>
+            <span class="page-count hidden text-xs text-muted tabular-nums" data-testid="page-count"></span>
+          </div>
       </div>
       <button
         type="button"

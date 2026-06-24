@@ -76,4 +76,35 @@ export function register(app: Hono, deps: AppDeps): void {
       <ShareLinkPanel id={id} filename={filename} pageCount={pageCount} />,
     );
   });
+
+  app.post("/api/v1/pdf/combine/validate", async (c) => {
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file || file.size === 0) {
+      return c.json({ valid: false, reason: "not-a-pdf" });
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return c.json({ valid: false, reason: "not-a-pdf" });
+    }
+
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const inspection = await inspectPdf(buf);
+
+    if (!inspection.ok) {
+      return c.json({ valid: false, reason: inspection.reason });
+    }
+
+    // Combine applies no per-file oversize or too-few-pages policy: the size
+    // cap is on the total across Source PDFs, and the >=2 Source PDF minimum
+    // is enforced at submit. The preflight only certifies each file is a
+    // readable PDF and reports its page count.
+    return c.json({
+      valid: true,
+      pageCount: inspection.pageCount,
+      size: file.size,
+      name: file.name,
+    });
+  });
 }
