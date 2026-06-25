@@ -21,7 +21,7 @@ These rules apply to every commit on every branch. The reviewer (`.sandcastle/re
 
 ## Architecture
 
-- **Hono server** under `src/server/`. Views are JSX components under `src/server/views/`.
+- **Hono server** composition root at `src/app.tsx`. Route groups under `src/routes/web/` and `src/routes/api/`. JSX views under `src/ui/` (`layout.tsx`, `screens/`, `components/`). Framework-free pure logic in `src/modules/`. Persistence helpers under `src/server/`.
 - **Domain vocabulary** in `CONTEXT.md` is authoritative. Use `_Tool_`, `_File Tool_`, `_Link Tool_`, `_Source PDF_`, `_Artifact_`, `_Share Link_`, `_Share ID_`, `_Combined PDF_`, `_Split PDF_`, `_Merge Order_`, `_Server-Side Processing_`, etc. in code, comments, and user-facing strings. Avoid the synonyms listed in the glossary's "Avoid" column.
 - **No new top-level directories** without a brief justification in the diff. The layout (`src/server` + `tests/{unit,integration,e2e,fixtures}`) is the established skeleton.
 

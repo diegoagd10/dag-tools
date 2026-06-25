@@ -1,13 +1,19 @@
 /** @jsxImportSource hono/jsx */
 
-import { Layout } from "./Layout";
+import { Layout } from "@/ui/layout";
 
-export const QrSharePage = ({ id }: { id: string }) => {
+export const QrSharePage = ({
+  id,
+  currentPath,
+}: {
+  id: string;
+  currentPath?: string;
+}) => {
   const pngUrl = `/links/qr/${id}.png`;
   const shareUrl = `/links/qr/${id}`;
 
   return (
-    <Layout title="QR Code — dag-tools">
+    <Layout title="QR Code — dag-tools" currentPath={currentPath}>
       <div class="flex flex-col items-start gap-6">
         <h1 class="font-sans text-3xl font-medium tracking-[-0.01em] text-ink">
           QR Code

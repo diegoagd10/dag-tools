@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderQrPng } from "@/server/qr";
+import { renderQrPng } from "@/modules/qr";
 
 describe("renderQrPng", () => {
   it("returns a Buffer", async () => {

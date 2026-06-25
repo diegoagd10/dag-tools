@@ -1,10 +1,10 @@
 /** @jsxImportSource hono/jsx */
 
-import { Layout } from "./Layout";
+import { Layout } from "@/ui/layout";
 
-export const PdfSplit = () => {
+export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="PDF Split — dag-tools">
+    <Layout title="PDF Split — dag-tools" currentPath={currentPath}>
       <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
         PDF Split
       </h1>
@@ -45,6 +45,41 @@ export const PdfSplit = () => {
             class="hidden text-xs text-red-600"
           />
         </div>
+
+        {/* File Summary — hidden until a valid Source PDF is chosen.
+            Populated client-side from POST /api/v1/pdf/split/validate
+            (pageCount, size, name). Read-only: no second PDF parse on
+            the client, no inputs. */}
+        <section
+          id="split-file-summary"
+          data-testid="split-file-summary"
+          class="hidden mt-2 rounded border border-hairline bg-paper px-4 py-3"
+          aria-live="polite"
+        >
+          <p
+            id="split-summary-name"
+            data-testid="split-summary-name"
+            class="font-sans text-sm font-medium text-ink"
+          />
+          <p
+            id="split-summary-meta"
+            data-testid="split-summary-meta"
+            class="mt-1 font-sans text-xs text-muted tabular-nums"
+          />
+          <p
+            id="split-summary-task-line"
+            data-testid="split-summary-task-line"
+            class="mt-2 font-sans text-xs text-ink-soft"
+          >
+            Task PDF Splitting · Mode Extract All · Output{" "}
+            <span
+              id="split-summary-output"
+              data-testid="split-summary-output"
+            >
+              N Files (.zip)
+            </span>
+          </p>
+        </section>
 
         <button
           id="split-btn"

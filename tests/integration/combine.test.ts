@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
 import { PDFDocument } from "pdf-lib";
-import { createApp } from "@/server/app";
+import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -246,6 +246,139 @@ describe("GET /pdf/combine/row", () => {
     expect(html).not.toContain("<html");
     // Should show the index in the label
     expect(html).toContain("Source PDF 3");
+  });
+
+  it("renders a page-count readout slot next to the file size", async () => {
+    const res = await app.request("/pdf/combine/row?index=3");
+    const html = await res.text();
+    // The row exposes a page-count slot the client fills from preflight.
+    expect(html).toContain("page-count");
+  });
+});
+
+function buildSingleFileFormData(fixtureName: string): FormData {
+  const buf = new Uint8Array(readFileSync(resolve(fixtures, fixtureName)));
+  const fd = new FormData();
+  fd.append("file", new Blob([buf], { type: "application/pdf" }), fixtureName);
+  return fd;
+}
+
+describe("POST /api/v1/pdf/combine/validate", () => {
+  let db: ReturnType<typeof Database>;
+  let storageDir: string;
+  let app: Hono;
+
+  beforeAll(() => {
+    db = new Database(":memory:");
+    initDb(db);
+    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-validate-"));
+    app = createApp({ db, storageDir });
+  });
+
+  afterAll(() => {
+    db.close();
+    rmSync(storageDir, { recursive: true, force: true });
+  });
+
+  it("returns valid with page count for a good multi-page PDF", async () => {
+    const fd = buildSingleFileFormData("sample-multi-page.pdf");
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({
+      valid: true,
+      pageCount: 3,
+      size: expect.any(Number),
+      name: "sample-multi-page.pdf",
+    });
+  });
+
+  it("returns valid with pageCount=1 for a single-page PDF", async () => {
+    const fd = buildSingleFileFormData("sample-1.pdf");
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(true);
+    expect(json.pageCount).toBe(1);
+  });
+
+  it("rejects a non-PDF file extension", async () => {
+    const fd = new FormData();
+    fd.append("file", new Blob(["not a pdf"], { type: "text/plain" }), "notes.txt");
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("not-a-pdf");
+  });
+
+  it("rejects a .pdf-named file whose bytes are not a PDF", async () => {
+    const fd = new FormData();
+    fd.append(
+      "file",
+      new Blob(["plain text with no pdf magic bytes"], { type: "application/pdf" }),
+      "fake.pdf",
+    );
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("not-a-pdf");
+  });
+
+  it("rejects an encrypted PDF", async () => {
+    const fd = buildSingleFileFormData("encrypted.pdf");
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("encrypted");
+  });
+
+  it("rejects a corrupt PDF", async () => {
+    const fd = buildSingleFileFormData("corrupt.pdf");
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("corrupt");
+  });
+
+  it("rejects a missing file as not-a-pdf", async () => {
+    const fd = new FormData();
+    const res = await app.request("/api/v1/pdf/combine/validate", {
+      method: "POST",
+      body: fd,
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.valid).toBe(false);
+    expect(json.reason).toBe("not-a-pdf");
   });
 });
 

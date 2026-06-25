@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
 import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
-import { createApp } from "@/server/app";
+import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -325,6 +325,54 @@ describe("GET /pdf/split (form page)", () => {
     expect(html).toContain("disabled");
     expect(html).toContain("hx-post=\"/api/v1/pdf/split\"");
     expect(html).toContain("split-form.js");
+  });
+
+  it("renders a hidden File Summary scaffold with stable hooks for the client to populate", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Summary container exists and is hidden until a valid Source PDF is chosen
+    expect(html).toContain('id="split-file-summary"');
+    expect(html).toContain('data-testid="split-file-summary"');
+    expect(html).toMatch(/id="split-file-summary"[^>]*class="[^"]*hidden/);
+
+    // Filename slot
+    expect(html).toContain('id="split-summary-name"');
+    expect(html).toContain('data-testid="split-summary-name"');
+
+    // "N Pages • N MB" meta slot
+    expect(html).toContain('id="split-summary-meta"');
+    expect(html).toContain('data-testid="split-summary-meta"');
+
+    // Read-only Task / Mode / Output line, populated by the client from the
+    // validate preflight (pageCount) — no second PDF parse on the client.
+    expect(html).toContain('id="split-summary-task-line"');
+    expect(html).toContain('data-testid="split-summary-task-line"');
+    // Read-only summary mentions the Task, Mode, and Output labels up front;
+    // the client fills in the Output count ("N Files (.zip)") from pageCount.
+    expect(html).toContain("PDF Splitting");
+    expect(html).toContain("Extract All");
+    expect(html).toContain("Files (.zip)");
+  });
+
+  it("contains no false feature-card copy: encryption, accounts, auto-deletion, instant split, zero loss", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Forbidden marketing copy from the mockup — must not appear anywhere.
+    expect(html).not.toContain("Secure Processing");
+    expect(html).not.toContain("Instant Split");
+    expect(html).not.toContain("Zero Loss");
+    // Honesty: nothing implies encryption, accounts, or deletion.
+    expect(html).not.toContain("encrypted");
+    expect(html).not.toContain("automatically deleted");
+    // "encrypted" is the only honest rejection reason surfaced by the client
+    // (password-protected PDFs); it never appears in the server-rendered page.
+    // The client injects that word into #split-file-rejection only on failure.
   });
 });
 

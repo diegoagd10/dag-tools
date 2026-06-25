@@ -71,3 +71,60 @@ test("Hono PDF Combine — add row, upload files, reorder, submit, Share Link ap
   const href = await link.getAttribute("href");
   expect(href).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
 });
+
+test("Hono PDF Combine — each Source PDF shows page count alongside size after preflight", async ({
+  page,
+}) => {
+  await page.goto("/pdf/combine");
+
+  const rows = page.getByTestId("source-pdf-row");
+  const inputs = page.locator(".source-pdf-row input[type='file']");
+
+  // Select a 3-page and a 2-page Source PDF
+  await inputs.nth(0).setInputFiles(resolve(fixtures, "sample-multi-page.pdf"));
+  await inputs.nth(1).setInputFiles(resolve(fixtures, "sample-2.pdf"));
+
+  // Each row shows its page count (from the validate preflight) next to size
+  await expect(rows.nth(0).getByTestId("page-count")).toBeVisible({
+    timeout: 5000,
+  });
+  await expect(rows.nth(0).getByTestId("page-count")).toHaveText("3 pages");
+  await expect(rows.nth(0).getByTestId("file-size")).toBeVisible();
+
+  await expect(rows.nth(1).getByTestId("page-count")).toBeVisible({
+    timeout: 5000,
+  });
+  await expect(rows.nth(1).getByTestId("page-count")).toHaveText("2 pages");
+  await expect(rows.nth(1).getByTestId("file-size")).toBeVisible();
+
+  // Both rows preflight-valid — Combine enabled
+  await expect(page.getByTestId("combine-button")).toBeEnabled();
+});
+
+test("Hono PDF Combine — corrupt Source PDF shows size only, inline error, no page count", async ({
+  page,
+}) => {
+  await page.goto("/pdf/combine");
+
+  const rows = page.getByTestId("source-pdf-row");
+  const inputs = page.locator(".source-pdf-row input[type='file']");
+
+  // First row valid, second row corrupt
+  await inputs.nth(0).setInputFiles(resolve(fixtures, "sample-1.pdf"));
+  await inputs.nth(1).setInputFiles(resolve(fixtures, "corrupt.pdf"));
+
+  // First row: page count present
+  await expect(rows.nth(0).getByTestId("page-count")).toBeVisible({
+    timeout: 5000,
+  });
+
+  // Second row: size shown, page count never faked, inline error shown
+  await expect(rows.nth(1).getByTestId("file-size")).toBeVisible();
+  await expect(rows.nth(1).getByTestId("page-count")).toBeHidden();
+  await expect(rows.nth(1).locator(".rejection-msg")).toContainText(
+    /corrupt or unreadable/,
+  );
+
+  // A rejected row blocks Combine
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+});

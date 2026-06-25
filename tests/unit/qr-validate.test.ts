@@ -4,7 +4,7 @@ import {
   isEmptyAfterTrim,
   isOverByteLimit,
   validateQrContent,
-} from "@/server/qr-validate";
+} from "@/modules/qr-validate";
 
 describe("trimContent", () => {
   it("removes leading and trailing whitespace", () => {

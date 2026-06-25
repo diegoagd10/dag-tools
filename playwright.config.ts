@@ -15,7 +15,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm tsx --tsconfig tsconfig.server.json src/server/index.ts",
+    command: "pnpm tsx --tsconfig tsconfig.server.json src/index.ts",
     url: "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

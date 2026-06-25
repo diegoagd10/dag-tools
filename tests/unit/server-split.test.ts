@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
-import { splitPdfs, entryName } from "@/server/split-pdfs";
+import { splitPdfs, entryName } from "@/modules/split-pdfs";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 

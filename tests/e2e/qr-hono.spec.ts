@@ -198,8 +198,11 @@ test.describe("QR Code Tool smoke flow", () => {
   }) => {
     await page.goto("/links/qr");
 
-    // Should have the QR form
+    // Should have the QR form rendered in a two-column layout
     await expect(page.getByTestId("qr-form")).toBeVisible();
+    await expect(page.getByTestId("qr-columns")).toBeVisible();
+    const columns = page.getByTestId("qr-columns");
+    await expect(columns).toHaveClass(/md:grid-cols-2/);
 
     // Fill in QR Content
     const textarea = page.getByTestId("qr-content-input");
@@ -212,7 +215,7 @@ test.describe("QR Code Tool smoke flow", () => {
     const indicator = page.locator("#qr-indicator");
     await expect(indicator).toHaveText("Creating…");
 
-    // Wait for the result (Share Link panel)
+    // Wait for the result (Share Link panel) swapped into the right column
     await expect(page.locator("#qr-result")).toBeVisible({ timeout: 10000 });
 
     // Should contain a share link in the text input
@@ -226,6 +229,17 @@ test.describe("QR Code Tool smoke flow", () => {
     await expect(link).toBeVisible();
     const href = await link.getAttribute("href");
     expect(href).toMatch(/^\/links\/qr\/[A-Za-z0-9_-]+$/);
+
+    // Should expose a "Download PNG" action pointing at the QR Image Endpoint
+    const downloadLink = page.getByTestId("qr-download-png");
+    await expect(downloadLink).toBeVisible();
+    await expect(downloadLink).toHaveText("Download PNG");
+    const downloadHref = await downloadLink.getAttribute("href");
+    expect(downloadHref).toMatch(/^\/links\/qr\/[A-Za-z0-9_-]+\.png$/);
+    expect(await downloadLink.getAttribute("download")).not.toBeNull();
+
+    // No Copy SVG / color / branding controls on the result.
+    await expect(page.locator("#qr-result a:has-text('Copy SVG')")).toHaveCount(0);
 
     // Extract the share URL and open the Share Link
     const shareUrl = inputValue;

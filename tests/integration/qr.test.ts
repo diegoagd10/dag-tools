@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Database from "better-sqlite3";
-import { createApp } from "@/server/app";
+import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -24,12 +24,17 @@ describe("GET /links/qr", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with the QR form", async () => {
+  it("returns 200 with the QR form rendered in two columns", async () => {
     const res = await app.request("/links/qr");
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain("QR Code");
     expect(html).toContain("QR Content");
+    // Two-column layout: a grid wrapper with a responsive 2-col breakpoint.
+    expect(html).toContain("md:grid-cols-2");
+    // The form and the htmx result target must still be present (swap contract).
+    expect(html).toContain('id="qr-form"');
+    expect(html).toContain('id="qr-result"');
   });
 });
 
@@ -69,6 +74,13 @@ describe("POST /api/v1/links/qr", () => {
     expect(html).not.toContain("<html");
     // Should contain "create another" link back to form
     expect(html).toContain("/links/qr");
+    // Should expose a Download PNG action pointing at the QR Image Endpoint.
+    expect(html).toContain("Download PNG");
+    expect(html).toMatch(/\/links\/qr\/[A-Za-z0-9_-]{12}\.png/);
+    expect(html).toContain("download");
+    // No Copy SVG / color / branding controls.
+    expect(html).not.toContain("Copy SVG");
+    expect(html).not.toContain("branding");
   });
 
   it("persists exactly one artifact row with tool=links/qr and correct text_content", async () => {
@@ -128,6 +140,10 @@ describe("POST /api/v1/links/qr", () => {
     expect(html).not.toContain("<!DOCTYPE html>");
     expect(html).not.toContain("<html");
 
+    // Error fragment must not expose Download PNG (only the success panel does).
+    expect(html).not.toContain("Download PNG");
+    expect(html).not.toContain(".png");
+
     // No artifact row written
     const afterCnt = (
       db.prepare("SELECT COUNT(*) as cnt FROM artifacts").get() as { cnt: number }
@@ -152,6 +168,9 @@ describe("POST /api/v1/links/qr", () => {
     expect(res.status).toBe(422);
     const html = await res.text();
     expect(html).not.toContain("<!DOCTYPE html>");
+
+    // Error fragment must not expose Download PNG (only the success panel does).
+    expect(html).not.toContain("Download PNG");
 
     // No artifact row written
     const afterCnt = (
