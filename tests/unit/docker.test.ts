@@ -74,6 +74,22 @@ describe(".dockerignore", () => {
   });
 });
 
+describe("pnpm native build config", () => {
+  it("package.json declares onlyBuiltDependencies with better-sqlite3 and esbuild", () => {
+    const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf-8"));
+    expect(pkg.pnpm).toBeDefined();
+    expect(pkg.pnpm.onlyBuiltDependencies).toEqual(
+      expect.arrayContaining(["better-sqlite3", "esbuild"]),
+    );
+  });
+
+  it("pnpm-workspace.yaml allowBuilds enables better-sqlite3 and esbuild", () => {
+    const content = readFileSync(resolve(root, "pnpm-workspace.yaml"), "utf-8");
+    expect(content).toMatch(/better-sqlite3:\s*true/);
+    expect(content).toMatch(/esbuild:\s*true/);
+  });
+});
+
 describe("server PORT default", () => {
   it("src/index.ts defaults PORT to 3000", () => {
     const content = readFileSync(resolve(root, "src/index.ts"), "utf-8");
