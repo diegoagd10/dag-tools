@@ -214,7 +214,7 @@ describe("POST /api/v1/pdf/combine", () => {
   });
 });
 
-describe("GET /pdf/combine/row", () => {
+describe("GET /pdf/combine", () => {
   let db: ReturnType<typeof Database>;
   let storageDir: string;
   let app: Hono;
@@ -222,7 +222,7 @@ describe("GET /pdf/combine/row", () => {
   beforeAll(() => {
     db = new Database(":memory:");
     initDb(db);
-    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-row-"));
+    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-form-"));
     app = createApp({ db, storageDir });
   });
 
@@ -231,28 +231,23 @@ describe("GET /pdf/combine/row", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Source PDF row fragment containing a file input", async () => {
-    const res = await app.request("/pdf/combine/row?index=3");
+  it("renders the combine form with drop-zone and hidden files[] input", async () => {
+    const res = await app.request("/pdf/combine");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
-    // Should contain a file input named files[]
+    expect(html).toContain("combine-form");
     expect(html).toContain('name="files[]"');
-    // Should contain remove button
-    expect(html).toContain("remove-row");
-    // Should be a fragment, not a full HTML page
-    expect(html).not.toContain("<!DOCTYPE html>");
-    expect(html).not.toContain("<html");
-    // Should show the index in the label
-    expect(html).toContain("Source PDF 3");
+    expect(html).toContain("combine-button");
+    expect(html).toContain("drop-zone");
+    // Full page, not a fragment
+    expect(html).toContain("<html");
   });
 
-  it("renders a page-count readout slot next to the file size", async () => {
-    const res = await app.request("/pdf/combine/row?index=3");
-    const html = await res.text();
-    // The row exposes a page-count slot the client fills from preflight.
-    expect(html).toContain("page-count");
+  it("does not expose the obsolete /pdf/combine/row route", async () => {
+    const res = await app.request("/pdf/combine/row?index=1");
+    expect(res.status).toBe(404);
   });
 });
 

@@ -144,14 +144,8 @@ describe("Global chrome stays out of fragments", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("does not wrap the /pdf/combine/row htmx fragment in chrome", async () => {
+  it("returns 404 for the removed /pdf/combine/row route", async () => {
     const res = await app.request("/pdf/combine/row?index=3");
-    expect(res.status).toBe(200);
-    const html = await res.text();
-
-    // Fragment only — no full-page chrome
-    expect(html).not.toContain("<html");
-    expect(html).not.toContain('data-testid="nav-tools"');
-    expect(html).not.toContain(HAIRLINE);
+    expect(res.status).toBe(404);
   });
 });

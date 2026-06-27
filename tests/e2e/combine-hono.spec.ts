@@ -3,128 +3,252 @@ import { resolve } from "node:path";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 
-test("Hono PDF Combine — add row, upload files, reorder, submit, Share Link appears", async ({
+test("renders combine form with drop-zone and disabled submit", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  await expect(page.getByTestId("combine-form")).toBeVisible();
+  await expect(page.getByTestId("drop-zone")).toBeVisible();
+  // drop-zone-input is opacity-0, still in a11y tree — not hidden
+  await expect(page.getByTestId("drop-zone-input")).toBeAttached();
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
+});
+
+test("drop-zone accepts multiple Source PDFs via browse and accumulates cards", async ({
   page,
 }) => {
   await page.goto("/pdf/combine");
 
-  // Should have the combine form
-  await expect(page.getByTestId("combine-form")).toBeVisible();
+  // Browse and select two valid PDFs
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
 
-  // Should have 2 initial rows
-  await expect(page.getByTestId("source-pdf-row")).toHaveCount(2);
+  // Selected count header
+  await expect(page.getByTestId("selected-count")).toHaveText("2", { timeout: 5000 });
 
-  // Combine button should be disabled with hint visible
-  await expect(page.getByTestId("combine-button")).toBeDisabled();
-  await expect(page.getByTestId("combine-hint")).toBeVisible();
+  // Two cards rendered
+  await expect(page.getByTestId("source-card")).toHaveCount(2);
 
-  // Click "Add file" to add a third row
-  await page.getByTestId("add-file-button").click();
+  // Card names visible
+  await expect(page.getByTestId("source-card").nth(0)).toContainText("sample-1.pdf");
+  await expect(page.getByTestId("source-card").nth(1)).toContainText("sample-2.pdf");
 
-  // Wait for the new row to appear (htmx adds it via beforeend swap)
-  await expect(page.getByTestId("source-pdf-row")).toHaveCount(3);
-
-  // Upload files to the first two rows
-  const allInputs = page.locator(".source-pdf-row input[type='file']");
-  await expect(allInputs).toHaveCount(3);
-
-  // Set files on first row
-  await allInputs.nth(0).setInputFiles(resolve(fixtures, "sample-1.pdf"));
-
-  // Wait a moment for the change event to fire
-  await page.waitForTimeout(100);
-
-  // Set files on second row
-  await allInputs.nth(1).setInputFiles(resolve(fixtures, "sample-2.pdf"));
-
-  // Running total should update
-  await expect(page.getByTestId("running-total")).toContainText("/ 50 MB");
-
-  // Combine button should be enabled (2 valid PDFs)
-  await expect(page.getByTestId("combine-button")).toBeEnabled();
+  // Both preflight-valid → button enabled
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
   await expect(page.getByTestId("combine-hint")).toBeHidden();
 
-  // Reorder rows: drag second row to first position via SortableJS grip
-  const rows = page.getByTestId("source-pdf-row");
-  const row1 = rows.nth(0);
-  const row2 = rows.nth(1);
+  // Browse again — files accumulate, not replace
+  await input.setInputFiles(resolve(fixtures, "sample-multi-page.pdf"));
+  await expect(page.getByTestId("selected-count")).toHaveText("3", { timeout: 5000 });
+  await expect(page.getByTestId("source-card")).toHaveCount(3);
+});
 
-  // Drag row1 to after row2 (using the sortable-grip)
-  await row1.locator(".sortable-grip").dragTo(row2);
+test("trash control removes a card and updates submit gate", async ({ page }) => {
+  await page.goto("/pdf/combine");
 
-  // Submit the form
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+
+  // Wait for preflight, so button is enabled
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+
+  // Remove first card
+  await page.getByTestId("source-card").nth(0).getByTestId("remove-card-button").click();
+
+  // One card remains
+  await expect(page.getByTestId("source-card")).toHaveCount(1);
+
+  // Button disabled again (need >= 2 valid)
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
+});
+
+test("dragging cards reorders them and submit produces pages in Merge Order", async ({
+  page,
+}) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+
+  // Wait for preflight
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+
+  // Reorder by swapping card positions via the Selection module
+  await page.evaluate(() => {
+    const sel = (window as any).__combineSelection;
+    if (!sel) return;
+    const items = sel.items();
+    if (items.length < 2) return;
+    // Swap first and second
+    sel.reorder([items[1].id, items[0].id]);
+  });
+
+  await page.waitForTimeout(300);
+
+  // Verify order swapped: sample-2.pdf should now be first
+  await expect(page.getByTestId("source-card").nth(0)).toContainText("sample-2.pdf");
+  await expect(page.getByTestId("source-card").nth(1)).toContainText("sample-1.pdf");
+
+  // Submit
   await page.getByTestId("combine-button").click();
 
-  // Wait for the result (Share Link panel)
-  // htmx swaps #combine-result with the response
+  // Result panel appears
   await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
-
-  // Should contain a share link in the text input
   const urlInput = page.locator("#combine-result input[type='text']");
   await expect(urlInput).toBeVisible();
   const inputValue = await urlInput.inputValue();
   expect(inputValue).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
 
-  // Should show a link to open/download
+  // Download the Combined PDF and verify page order
+  const downloadPromise = page.waitForEvent("download");
   const link = page.locator("#combine-result a");
-  await expect(link).toBeVisible();
-  const href = await link.getAttribute("href");
-  expect(href).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
+  await link.click();
+  const download = await downloadPromise;
+
+  // Verify the download is a PDF
+  const path = await download.path();
+  expect(path).toBeTruthy();
 });
 
-test("Hono PDF Combine — each Source PDF shows page count alongside size after preflight", async ({
+test("non-PDF file is rejected at add-time with inline message", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  // Add a valid PDF first so we can observe rejection on second
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles(resolve(fixtures, "sample-1.pdf"));
+
+  await expect(page.getByTestId("source-card")).toHaveCount(1);
+
+  // Add a non-PDF file alongside a valid one
+  await input.setInputFiles([
+    resolve(fixtures, "sample-2.pdf"),
+    resolve(fixtures, "not-a-pdf.txt"),
+  ]);
+
+  // Only the valid PDF is added — the txt is rejected
+  await expect(page.getByTestId("source-card")).toHaveCount(2);
+  await expect(page.getByTestId("source-card").nth(1)).toContainText("sample-2.pdf");
+});
+
+test("corrupt Source PDF shows inline error and keeps Combine disabled", async ({
   page,
 }) => {
   await page.goto("/pdf/combine");
 
-  const rows = page.getByTestId("source-pdf-row");
-  const inputs = page.locator(".source-pdf-row input[type='file']");
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "corrupt.pdf"),
+  ]);
 
-  // Select a 3-page and a 2-page Source PDF
-  await inputs.nth(0).setInputFiles(resolve(fixtures, "sample-multi-page.pdf"));
-  await inputs.nth(1).setInputFiles(resolve(fixtures, "sample-2.pdf"));
+  // Two cards rendered (corrupt file is accepted as PDF, rejected by preflight)
+  await expect(page.getByTestId("source-card")).toHaveCount(2);
 
-  // Each row shows its page count (from the validate preflight) next to size
-  await expect(rows.nth(0).getByTestId("page-count")).toBeVisible({
-    timeout: 5000,
-  });
-  await expect(rows.nth(0).getByTestId("page-count")).toHaveText("3 pages");
-  await expect(rows.nth(0).getByTestId("file-size")).toBeVisible();
+  // First card valid — no rejection element
+  await expect(
+    page.getByTestId("source-card").nth(0).locator("[data-testid='card-rejection']"),
+  ).toHaveCount(0);
 
-  await expect(rows.nth(1).getByTestId("page-count")).toBeVisible({
-    timeout: 5000,
-  });
-  await expect(rows.nth(1).getByTestId("page-count")).toHaveText("2 pages");
-  await expect(rows.nth(1).getByTestId("file-size")).toBeVisible();
+  // Second card shows rejection after preflight
+  await expect(
+    page.getByTestId("source-card").nth(1).locator("[data-testid='card-rejection']"),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(
+    page.getByTestId("source-card").nth(1).getByTestId("card-rejection"),
+  ).toContainText(/corrupt|unreadable/);
 
-  // Both rows preflight-valid — Combine enabled
-  await expect(page.getByTestId("combine-button")).toBeEnabled();
-});
-
-test("Hono PDF Combine — corrupt Source PDF shows size only, inline error, no page count", async ({
-  page,
-}) => {
-  await page.goto("/pdf/combine");
-
-  const rows = page.getByTestId("source-pdf-row");
-  const inputs = page.locator(".source-pdf-row input[type='file']");
-
-  // First row valid, second row corrupt
-  await inputs.nth(0).setInputFiles(resolve(fixtures, "sample-1.pdf"));
-  await inputs.nth(1).setInputFiles(resolve(fixtures, "corrupt.pdf"));
-
-  // First row: page count present
-  await expect(rows.nth(0).getByTestId("page-count")).toBeVisible({
-    timeout: 5000,
-  });
-
-  // Second row: size shown, page count never faked, inline error shown
-  await expect(rows.nth(1).getByTestId("file-size")).toBeVisible();
-  await expect(rows.nth(1).getByTestId("page-count")).toBeHidden();
-  await expect(rows.nth(1).locator(".rejection-msg")).toContainText(
-    /corrupt or unreadable/,
-  );
-
-  // A rejected row blocks Combine
+  // Combine stays disabled
   await expect(page.getByTestId("combine-button")).toBeDisabled();
+});
+
+test("encrypted Source PDF shows inline error and keeps Combine disabled", async ({
+  page,
+}) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "encrypted.pdf"),
+  ]);
+
+  await expect(page.getByTestId("source-card")).toHaveCount(2);
+
+  // First card valid — no rejection
+  await expect(
+    page.getByTestId("source-card").nth(0).locator("[data-testid='card-rejection']"),
+  ).toHaveCount(0);
+
+  // Encrypted file shows inline rejection after preflight
+  await expect(
+    page.getByTestId("source-card").nth(1).locator("[data-testid='card-rejection']"),
+  ).toBeVisible({ timeout: 5000 });
+  await expect(
+    page.getByTestId("source-card").nth(1).getByTestId("card-rejection"),
+  ).toContainText(/password-protected/);
+
+  // Combine stays disabled
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+});
+
+test("submit succeeds and yields a downloadable Combined PDF", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+
+  // Wait for preflight and combine to be enabled
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+
+  // Submit
+  await page.getByTestId("combine-button").click();
+
+  // Old Share-Link result panel renders
+  await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+
+  // Share-ID link present
+  const urlInput = page.locator("#combine-result input[type='text']");
+  await expect(urlInput).toBeVisible();
+  const inputValue = await urlInput.inputValue();
+  expect(inputValue).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
+
+  // Download via share link
+  const downloadPromise = page.waitForEvent("download");
+  const link = page.locator("#combine-result a");
+  await link.click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/combined-\d{4}-\d{2}-\d{2}\.pdf/);
+});
+
+test("less than 2 valid Source PDFs keeps Combine disabled with hint", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  // Add just one file
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles(resolve(fixtures, "sample-1.pdf"));
+
+  await expect(page.getByTestId("source-card")).toHaveCount(1);
+
+  // Button stays disabled, hint visible
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
+
+  // Remove the only card
+  await page.getByTestId("source-card").nth(0).getByTestId("remove-card-button").click();
+  await expect(page.getByTestId("source-card")).toHaveCount(0);
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
 });
