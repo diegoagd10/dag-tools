@@ -40,7 +40,7 @@ export const Layout = ({
         <header>
           <nav
             aria-label="Primary"
-            class="mx-auto flex w-full max-w-3xl items-center justify-between px-6 pt-3 sm:pt-4"
+            class="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4 sm:py-5"
           >
             <a
               href="/"
