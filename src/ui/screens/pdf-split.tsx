@@ -4,13 +4,30 @@ import { Layout } from "@/ui/layout";
 
 export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="PDF Split — dag-tools" currentPath={currentPath}>
-      <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
+    <Layout
+      title="PDF Split — dag-tools"
+      currentPath={currentPath}
+      bodyClass="bg-split-canvas page-split"
+    >
+      <span class="inline-block rounded-full border border-split-accent px-2.5 py-0.5 font-mono text-xs font-medium uppercase tracking-widest text-split-accent">
+        PDF Utility
+      </span>
+
+      <h1 class="mt-3 font-display text-4xl sm:text-5xl font-semibold tracking-[-0.01em] text-split-primary">
         Split a PDF Document
       </h1>
-      <p class="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
+      <p class="mt-4 max-w-xl text-base leading-relaxed text-split-secondary">
         Upload a PDF to split it into one file per page — downloaded as a ZIP.
       </p>
+
+      <div
+        class="mt-6 flex flex-wrap items-center gap-3"
+        aria-label="Features"
+      >
+        <span class="rounded-full border border-split-accent/40 bg-split-surface px-3 py-1 font-mono text-xs text-split-accent">Server-Side Processing</span>
+        <span class="rounded-full border border-split-accent/40 bg-split-surface px-3 py-1 font-mono text-xs text-split-accent">No Account Needed</span>
+        <span class="rounded-full border border-split-accent/40 bg-split-surface px-3 py-1 font-mono text-xs text-split-accent">Shareable Link</span>
+      </div>
 
       <form
         id="split-form"
@@ -32,7 +49,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
           role="button"
           tabindex={0}
           aria-label="Drop your PDF here or press Enter to browse"
-          class="relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-hairline bg-paper px-6 py-10 text-center transition-colors duration-150 hover:border-accent hover:bg-accent/5"
+          class="relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-split-border bg-split-surface px-6 py-10 text-center transition-colors duration-150 hover:border-split-accent hover:bg-split-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-split-accent"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -42,14 +59,14 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="h-8 w-8 text-accent"
+            class="h-8 w-8 text-split-accent"
             aria-hidden="true"
           >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <p class="font-sans text-sm text-muted">
+          <p class="font-sans text-sm text-split-secondary">
             Drop your PDF here / or click to browse
           </p>
           <input
@@ -73,6 +90,8 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
         <p
           id="split-file-rejection"
           data-testid="split-file-rejection"
+          role="alert"
+          aria-live="assertive"
           class="hidden text-xs text-red-600"
         />
 
@@ -81,7 +100,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
           data-testid="split-button"
           type="submit"
           disabled
-          class="mt-2 inline-flex w-fit items-center rounded bg-accent px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent"
+          class="mt-2 inline-flex w-fit items-center rounded bg-split-cta px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-split-cta/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-split-cta"
         >
           Split PDF
         </button>
@@ -89,7 +108,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
         <p
           id="split-hint"
           data-testid="split-hint"
-          class="text-sm text-muted"
+          class="text-sm text-split-secondary"
         >
           Select a valid PDF (max 50 MB) to split.
         </p>
@@ -97,7 +116,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
 
       <div
         id="split-indicator"
-        class="htmx-indicator mt-4 text-sm text-ink-soft"
+        class="htmx-indicator mt-4 text-sm text-split-secondary"
       >
         Splitting…
       </div>

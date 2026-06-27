@@ -217,6 +217,67 @@ test("PDF Split — successful split renders success fragment with download link
   await expect(page.getByTestId("split-selected-card")).toBeHidden();
 });
 
+test("PDF Split — trust-badge row visible with truthful copy", async ({
+  page,
+}) => {
+  await page.goto("/pdf/split");
+
+  await expect(page.getByText("Server-Side Processing")).toBeVisible();
+  await expect(page.getByText("No Account Needed")).toBeVisible();
+  await expect(page.getByText("Shareable Link")).toBeVisible();
+
+  // Forbidden copy must not appear
+  await expect(page.locator("body")).not.toContainText("Client-side Only");
+  await expect(page.locator("body")).not.toContainText("Instant Processing");
+  await expect(page.locator("body")).not.toContainText("Secure Processing");
+  await expect(page.locator("body")).not.toContainText("Instant Split");
+  await expect(page.locator("body")).not.toContainText("Zero Loss");
+});
+
+test("PDF Split — drop zone keyboard-operable: Enter triggers file picker", async ({
+  page,
+}) => {
+  await page.goto("/pdf/split");
+
+  // Focus the drop zone directly (tabindex=0 makes it focusable)
+  const dropZone = page.getByTestId("drop-zone");
+  await dropZone.focus();
+  await expect(dropZone).toBeFocused();
+
+  // Press Enter on drop zone — should trigger the hidden file input
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.keyboard.press("Enter");
+  const fileChooser = await fileChooserPromise;
+
+  // The file chooser was triggered — the hidden input is attached
+  expect(fileChooser).toBeTruthy();
+  // Cancel it so it doesn't mess with subsequent tests
+  await fileChooser.setFiles([]);
+});
+
+test("PDF Split — narrow viewport: form usable, badges wrap, no horizontal overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/pdf/split");
+
+  // Heading visible
+  await expect(page.locator("h1")).toBeVisible();
+
+  // Drop zone visible
+  await expect(page.getByTestId("drop-zone")).toBeVisible();
+
+  // First trust badge visible
+  await expect(page.getByText("Server-Side Processing")).toBeVisible();
+
+  // No horizontal overflow on body
+  const bodyWidth = await page.locator("body").evaluate(
+    (el) => el.scrollWidth,
+  );
+  const viewportWidth = 375;
+  expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 1);
+});
+
 test("PDF Split — CTA gating: disabled until valid selection, enabled after preflight", async ({
   page,
 }) => {

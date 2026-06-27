@@ -88,14 +88,14 @@
 
     var statusText = "";
     if (selectedFile.status === "pending") {
-      statusText = '<span class="text-xs text-muted">Validating…</span>';
+      statusText = '<span class="text-xs text-split-secondary">Validating…</span>';
     } else if (selectedFile.status === "valid") {
       var pagesText =
         selectedFile.pageCount === 1
           ? "1 page"
           : selectedFile.pageCount + " pages";
       statusText =
-        '<span class="text-xs text-muted tabular-nums">' +
+        '<span class="text-xs text-split-secondary tabular-nums">' +
         pagesText +
         " • " +
         formatBytes(selectedFile.size) +
@@ -103,18 +103,18 @@
     }
 
     cardSlot.innerHTML =
-      '<div class="mt-3 rounded-lg border border-hairline bg-paper px-4 py-3 flex items-center gap-3" data-testid="split-selected-card">' +
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-accent" aria-hidden="true">' +
+      '<div class="mt-3 rounded-lg border border-split-border bg-split-surface px-4 py-3 flex items-center gap-3" data-testid="split-selected-card">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-split-accent" aria-hidden="true">' +
       '<path d="M14 11V3H6" />' +
       '<path d="M14 3L8 9L5 6L2 9" />' +
       "</svg>" +
       '<div class="flex-1 min-w-0 flex flex-col gap-0.5">' +
-      '<span class="truncate font-sans text-sm font-medium text-ink" data-testid="split-card-name">' +
+      '<span class="truncate font-sans text-sm font-medium text-split-primary" data-testid="split-card-name">' +
       escapeHtml(selectedFile.name) +
       "</span>" +
       statusText +
       "</div>" +
-      '<button type="button" class="shrink-0 rounded p-1 text-muted transition-colors hover:text-red-500 hover:bg-red-100" data-testid="split-remove-button" aria-label="Remove ' +
+      '<button type="button" class="shrink-0 rounded p-1 text-split-secondary transition-colors hover:text-red-500 hover:bg-split-accent/10" data-testid="split-remove-button" aria-label="Remove ' +
       escapeHtml(selectedFile.name) +
       '">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="h-4 w-4">' +
@@ -403,20 +403,20 @@
     dropZone.addEventListener("dragover", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.add("border-accent", "bg-accent/5");
+      dropZone.classList.add("border-split-accent", "bg-split-accent/10");
     });
 
     dropZone.addEventListener("dragleave", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove("border-accent", "bg-accent/5");
+      dropZone.classList.remove("border-split-accent", "bg-split-accent/10");
     });
 
     // Drop zone — drop handler
     dropZone.addEventListener("drop", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove("border-accent", "bg-accent/5");
+      dropZone.classList.remove("border-split-accent", "bg-split-accent/10");
 
       if (!e.dataTransfer || !e.dataTransfer.files) return;
       if (e.dataTransfer.files.length === 0) return;

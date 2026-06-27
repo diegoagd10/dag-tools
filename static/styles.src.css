@@ -122,3 +122,50 @@
 @utility border-combine-accent {
   border-color: var(--color-combine-accent);
 }
+
+/* Split-scoped Midnight Ink palette — per #58.
+   PDF Tools = tertiary coral accent (per ADR-0005 section-tint convention). */
+.page-split {
+  --color-split-bg: #051424;
+  --color-split-surface: #122131;
+  --color-split-border: #45464d;
+  --color-split-icon-tile: #1c2b3c;
+  --color-split-text-primary: #d4e4fa;
+  --color-split-text-secondary: #c6c6cd;
+  --color-split-accent: #ffb3b0;
+  --color-split-cta: #cb5f5f;
+}
+
+@utility bg-split-canvas {
+  background-color: var(--color-split-bg);
+}
+@utility bg-split-surface {
+  background-color: var(--color-split-surface);
+}
+@utility bg-split-icon-tile {
+  background-color: var(--color-split-icon-tile);
+}
+@utility border-split-border {
+  border-color: var(--color-split-border);
+}
+@utility text-split-primary {
+  color: var(--color-split-text-primary);
+}
+@utility text-split-secondary {
+  color: var(--color-split-text-secondary);
+}
+@utility text-split-accent {
+  color: var(--color-split-accent);
+}
+@utility bg-split-accent {
+  background-color: var(--color-split-accent);
+}
+@utility text-split-cta {
+  color: var(--color-split-cta);
+}
+@utility bg-split-cta {
+  background-color: var(--color-split-cta);
+}
+@utility border-split-accent {
+  border-color: var(--color-split-accent);
+}

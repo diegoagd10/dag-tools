@@ -352,13 +352,27 @@ describe("GET /pdf/split (form page)", () => {
     expect(html).not.toContain("Extract All");
   });
 
-  it("contains no false feature-card copy: encryption, accounts, auto-deletion, instant split, zero loss", async () => {
+  it("renders the truthful trust-badge row: Server-Side Processing, No Account Needed, Shareable Link", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Truthful trio must appear exactly.
+    expect(html).toContain("Server-Side Processing");
+    expect(html).toContain("No Account Needed");
+    expect(html).toContain("Shareable Link");
+  });
+
+  it("contains no false feature-card copy: Client-side Only, Instant Processing, encryption-related, and other mockup lies", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
     // Forbidden marketing copy from the mockup — must not appear anywhere.
+    expect(html).not.toContain("Client-side Only");
+    expect(html).not.toContain("Instant Processing");
     expect(html).not.toContain("Secure Processing");
     expect(html).not.toContain("Instant Split");
     expect(html).not.toContain("Zero Loss");
@@ -368,6 +382,24 @@ describe("GET /pdf/split (form page)", () => {
     // "encrypted" is the only honest rejection reason surfaced by the client
     // (password-protected PDFs); it never appears in the server-rendered page.
     // The client injects that word into #split-file-rejection only on failure.
+  });
+
+  it("renders with Midnight Ink split tokens: page-split scope on body, coral utility classes present", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Page-scoped CSS class applied to <body>
+    expect(html).toContain("page-split");
+    // Canvas background utility class applied
+    expect(html).toContain("bg-split-canvas");
+    // At least one coral accent utility class present (hex values live in CSS, not inline HTML)
+    const hasCoral =
+      html.includes("text-split-accent") ||
+      html.includes("bg-split-cta") ||
+      html.includes("border-split-accent");
+    expect(hasCoral).toBe(true);
   });
 });
 
