@@ -6,7 +6,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
   return (
     <Layout title="PDF Split — dag-tools" currentPath={currentPath}>
       <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
-        PDF Split
+        Split a PDF Document
       </h1>
       <p class="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
         Upload a PDF to split it into one file per page — downloaded as a ZIP.
@@ -23,63 +23,58 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
         hx-on--before-swap="if(event.detail.xhr.status === 422) event.detail.shouldSwap = true"
         class="mt-8 flex w-full max-w-xl flex-col gap-4"
       >
-        <div class="flex flex-col gap-2">
-          <label
-            for="split-file-input"
-            data-testid="split-file-label"
-            class="font-sans text-sm font-medium text-ink"
+        {/* Drop zone — single-file drop or click-to-browse.
+            The hidden file input is an invisible overlay; the client script
+            wires drag-and-drop and populates it via DataTransfer. */}
+        <div
+          id="drop-zone"
+          data-testid="drop-zone"
+          role="button"
+          tabindex={0}
+          aria-label="Drop your PDF here or press Enter to browse"
+          class="relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-hairline bg-paper px-6 py-10 text-center transition-colors duration-150 hover:border-accent hover:bg-accent/5"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-8 w-8 text-accent"
+            aria-hidden="true"
           >
-            Source PDF
-          </label>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <p class="font-sans text-sm text-muted">
+            Drop your PDF here / or click to browse
+          </p>
           <input
-            id="split-file-input"
-            data-testid="split-file-input"
             type="file"
+            id="split-file-input"
             name="file"
+            data-testid="split-file-input"
             accept=".pdf"
-            class="block w-full rounded border border-hairline bg-paper px-3 py-2 font-sans text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-accent/10 file:px-3 file:py-1 file:font-sans file:text-sm file:font-medium file:text-accent hover:file:bg-accent/20"
-          />
-          <p
-            id="split-file-rejection"
-            data-testid="split-file-rejection"
-            class="hidden text-xs text-red-600"
+            tabindex={-1}
+            class="absolute inset-0 w-full h-full cursor-pointer opacity-0"
           />
         </div>
 
-        {/* File Summary — hidden until a valid Source PDF is chosen.
-            Populated client-side from POST /api/v1/pdf/split/validate
-            (pageCount, size, name). Read-only: no second PDF parse on
-            the client, no inputs. */}
-        <section
-          id="split-file-summary"
-          data-testid="split-file-summary"
-          class="hidden mt-2 rounded border border-hairline bg-paper px-4 py-3"
+        {/* Client-rendered selected-file card — populated by split-form.js */}
+        <div
+          id="selected-file-card"
+          data-testid="selected-file-card"
           aria-live="polite"
-        >
-          <p
-            id="split-summary-name"
-            data-testid="split-summary-name"
-            class="font-sans text-sm font-medium text-ink"
-          />
-          <p
-            id="split-summary-meta"
-            data-testid="split-summary-meta"
-            class="mt-1 font-sans text-xs text-muted tabular-nums"
-          />
-          <p
-            id="split-summary-task-line"
-            data-testid="split-summary-task-line"
-            class="mt-2 font-sans text-xs text-ink-soft"
-          >
-            Task PDF Splitting · Mode Extract All · Output{" "}
-            <span
-              id="split-summary-output"
-              data-testid="split-summary-output"
-            >
-              N Files (.zip)
-            </span>
-          </p>
-        </section>
+        />
+
+        <p
+          id="split-file-rejection"
+          data-testid="split-file-rejection"
+          class="hidden text-xs text-red-600"
+        />
 
         <button
           id="split-btn"
@@ -88,7 +83,7 @@ export const PdfSplit = ({ currentPath }: { currentPath?: string }) => {
           disabled
           class="mt-2 inline-flex w-fit items-center rounded bg-accent px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent"
         >
-          Split
+          Split PDF
         </button>
 
         <p

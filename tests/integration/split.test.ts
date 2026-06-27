@@ -314,47 +314,33 @@ describe("GET /pdf/split (form page)", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("renders the Split form with file input and disabled Split button", async () => {
+  it("renders the Split form with drop zone, hidden file input, and disabled Split PDF button", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain("PDF Split");
-    expect(html).toContain('id="split-file-input"');
+    expect(html).toContain("Split a PDF Document");
+    expect(html).toContain('id="drop-zone"');
+    expect(html).toContain('name="file"');
+    expect(html).toContain('type="file"');
+    expect(html).toContain('accept=".pdf"');
     expect(html).toContain('id="split-btn"');
     expect(html).toContain("disabled");
     expect(html).toContain("hx-post=\"/api/v1/pdf/split\"");
     expect(html).toContain("split-form.js");
+    expect(html).toContain('id="split-hint"');
+    expect(html).toContain('id="split-file-rejection"');
   });
 
-  it("renders a hidden File Summary scaffold with stable hooks for the client to populate", async () => {
+  it("does NOT render the old summary scaffold or task line", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
-    // Summary container exists and is hidden until a valid Source PDF is chosen
-    expect(html).toContain('id="split-file-summary"');
-    expect(html).toContain('data-testid="split-file-summary"');
-    expect(html).toMatch(/id="split-file-summary"[^>]*class="[^"]*hidden/);
-
-    // Filename slot
-    expect(html).toContain('id="split-summary-name"');
-    expect(html).toContain('data-testid="split-summary-name"');
-
-    // "N Pages • N MB" meta slot
-    expect(html).toContain('id="split-summary-meta"');
-    expect(html).toContain('data-testid="split-summary-meta"');
-
-    // Read-only Task / Mode / Output line, populated by the client from the
-    // validate preflight (pageCount) — no second PDF parse on the client.
-    expect(html).toContain('id="split-summary-task-line"');
-    expect(html).toContain('data-testid="split-summary-task-line"');
-    // Read-only summary mentions the Task, Mode, and Output labels up front;
-    // the client fills in the Output count ("N Files (.zip)") from pageCount.
-    expect(html).toContain("PDF Splitting");
-    expect(html).toContain("Extract All");
-    expect(html).toContain("Files (.zip)");
+    expect(html).not.toContain('id="split-file-summary"');
+    expect(html).not.toContain("PDF Splitting");
+    expect(html).not.toContain("Extract All");
   });
 
   it("contains no false feature-card copy: encryption, accounts, auto-deletion, instant split, zero loss", async () => {
