@@ -121,11 +121,11 @@ The design style is **Modern-Minimalist with an Atmospheric twist**. It utilizes
 
 The palette is anchored in a **Midnight Ink** spectrum. Surfaces are not pure black, but rather deep, desaturated ocean blues and charcoals that provide a sense of depth.
 
-- **Primary Canvas:** A deep navy-charcoal (#020617) serves as the foundation.
-- **Accents:** 
-    - **Sage Green (#8AA399):** Used for primary actions, success states, and growth indicators. It provides a natural, calming contrast to the dark base.
-    - **Muted Red (#B24C4C):** Used sparingly for highlights, destructive actions, or "Dragon’s Breath" emphasis points.
-- **Text & UI Contrast:** High-contrast silver and off-white tones are used for legibility, with secondary text dropping into slate grays to maintain hierarchy.
+- **Primary Canvas:** A deep navy (`#051424`, the `background` / `surface` token) serves as the foundation.
+- **Accents — section-tinted** (per ADR-0005, each tool category reads as a single accent):
+    - **Coral / Clay (`#ffb3b0`, with `#cb5f5f` for text on a container):** the `tertiary` family. Used for **PDF Tools** — primary actions, success states, and emphasis.
+    - **Sage (`#b2ccc1`):** the `secondary` family. Used for **QR Tools** — primary actions and accents within that section.
+- **Text & UI Contrast:** High-contrast off-white (`on-surface` `#d4e4fa`) carries primary content; secondary text drops to `on-surface-variant` (`#c6c6cd`) to maintain hierarchy.
 
 ## Typography
 
@@ -161,9 +161,9 @@ The shape language is **Refined and Rounded**. By using a `roundedness` level of
 
 ## Components
 
-- **Buttons:** Primary buttons use a Sage Green background with dark text for maximum "pop." Secondary buttons are "ghost" style with a Sage border.
-- **Inputs:** Fields are dark-recessed (#020617) with a subtle 1px border that glows Sage Green when focused.
+- **Buttons:** Primary buttons use the **section accent** as background (coral for PDF Tools, sage for QR Tools) with dark text for maximum "pop." Secondary buttons are "ghost" style with a section-accent border.
+- **Inputs:** Fields are dark-recessed (`#051424`) with a subtle 1px border that glows the section accent when focused.
 - **Chips:** Small, low-contrast capsules using Slate-800 backgrounds with Silver-200 text for non-intrusive categorization.
-- **Cards:** Use a "Surface Elevated" color (#1E293B) with no shadow. Define the edge with a thin, 1px stroke that is slightly lighter than the background.
+- **Cards:** Use the `surface-container` color (`#122131`) with no shadow. Define the edge with a thin, 1px `outline-variant` (`#45464d`) stroke that is slightly lighter than the background.
 - **Lists:** Separated by thin, low-opacity horizontal lines (10% opacity white) to maintain a clean, editorial look without cluttering the dark canvas.
-- **Progress Indicators:** Use the Muted Red accent for high-urgency tasks and Sage Green for standard progression.
+- **Progress Indicators:** Use the coral `tertiary` accent for high-urgency tasks and the sage `secondary` accent for standard progression.
