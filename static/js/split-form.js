@@ -161,7 +161,11 @@
   // Clear selection — back to empty zone
   // -------------------------------------------------------------------
   function clearSelection() {
-    // Abort in-flight validation
+    // Invalidate any in-flight magic-byte reads so their callback
+    // cannot resurrect selectedFile after we clear it (issue #56)
+    magicByteSeq++;
+
+    // Abort in-flight server validation
     if (validationAbort) {
       validationAbort.abort();
       validationAbort = null;
