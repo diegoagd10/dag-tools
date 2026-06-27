@@ -1,4 +1,4 @@
-import { copyFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, writeFileSync, existsSync } from "node:fs";
 import { load } from "js-yaml";
 
 export const DAG_TOOLS_MARKER_START = "# >>> dag-tools >>>";
@@ -70,6 +70,18 @@ export function mergeDagToolsBlock(
  */
 export function writeConfig(path: string, content: string): void {
   writeFileSync(path, content, "utf-8");
+}
+
+/**
+ * Restore Traefik config from a backup file.
+ * If the backup is missing, logs a warning and does nothing.
+ */
+export function restoreConfig(backupPath: string, destPath: string): void {
+  if (!existsSync(backupPath)) {
+    console.warn(`Traefik backup not found at ${backupPath}; skipping restore`);
+    return;
+  }
+  copyFileSync(backupPath, destPath);
 }
 
 /**

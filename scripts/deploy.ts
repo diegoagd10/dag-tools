@@ -20,7 +20,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { backupConfig, buildDagToolsBlock, mergeDagToolsBlock } from "./traefik-config";
+import { backupConfig, buildDagToolsBlock, mergeDagToolsBlock, restoreConfig } from "./traefik-config";
 
 // ── Public types ────────────────────────────────────────────────────────────
 
@@ -37,7 +37,12 @@ export interface DeployExecutor {
   gitSha(): string;
   dockerBuild(sha: string): void;
   portainerList(env: DeployEnv): Promise<{ Id: number; Name: string }[]>;
-  portainerCreate(env: DeployEnv, composeYaml: string): Promise<void>;
+  portainerGetStack(
+    env: DeployEnv,
+    id: number,
+  ): Promise<{ Id: number; Name: string; StackFileContent: string }>;
+  portainerCreate(env: DeployEnv, composeYaml: string): Promise<number>;
+  portainerRemove(env: DeployEnv, id: number): Promise<void>;
   portainerUpdate(
     env: DeployEnv,
     id: number,
@@ -47,6 +52,7 @@ export interface DeployExecutor {
   traefikBackupConfig(path: string): Promise<string>;
   traefikWriteConfig(path: string, content: string): Promise<void>;
   traefikRestart(): Promise<void>;
+  traefikRestoreFromBackup(backupPath: string, destPath: string): Promise<void>;
   traefikSmokeCheck(url: string, timeoutMs: number): Promise<boolean>;
 }
 
@@ -83,7 +89,11 @@ export async function main(executor: DeployExecutor): Promise<void> {
   const sha = executor.gitSha();
 
   // 4. Docker build
-  executor.dockerBuild(sha);
+  try {
+    executor.dockerBuild(sha);
+  } catch (err) {
+    throw new Error(`DOCKER_BUILD_FAILED: ${(err as Error).message}`);
+  }
 
   // 5. Compose YAML with immutable image tag
   const composeYaml = `version: "3.8"
@@ -101,50 +111,147 @@ services:
 `;
 
   // 6. Portainer: list stacks, find by name (case-insensitive)
-  const stacks = await executor.portainerList(deployEnv);
+  let stacks: { Id: number; Name: string }[];
+  try {
+    stacks = await executor.portainerList(deployEnv);
+  } catch (err) {
+    throw new Error(
+      `PORTAINER_API_FAILED: GET /api/stacks → ${(err as Error).message}`,
+    );
+  }
+
   const existing = stacks.find(
     (s) => s.Name.toLowerCase() === deployEnv.stackName.toLowerCase(),
   );
 
+  const isFirstDeploy = !existing;
+  let previousStack: { id: number; composeYaml: string } | null = null;
+  let newStackId: number | null = null;
+
+  // Capture previous stack state before update
   if (existing) {
-    await executor.portainerUpdate(deployEnv, existing.Id, composeYaml);
-  } else {
-    await executor.portainerCreate(deployEnv, composeYaml);
+    try {
+      const prev = await executor.portainerGetStack(deployEnv, existing.Id);
+      previousStack = {
+        id: prev.Id,
+        composeYaml: prev.StackFileContent,
+      };
+    } catch (err) {
+      throw new Error(
+        `PORTAINER_API_FAILED: GET /api/stacks/${existing.Id} → ${(err as Error).message}`,
+      );
+    }
   }
 
-  // 7. Smoke check
-  const ok = await executor.smokeCheck("http://127.0.0.1:3010/", 30_000);
-  if (!ok) {
+  // Create or update
+  try {
+    if (existing) {
+      await executor.portainerUpdate(deployEnv, existing.Id, composeYaml);
+      newStackId = existing.Id;
+    } else {
+      newStackId = await executor.portainerCreate(deployEnv, composeYaml);
+    }
+  } catch (err) {
     throw new Error(
-      "Smoke check failed: app not responding on http://127.0.0.1:3010/",
+      `PORTAINER_API_FAILED: ${(err as Error).message}`,
     );
   }
 
-  // 8. Traefik: backup current dynamic config
+  // 7. Local smoke check (with portainer rollback on failure)
+  try {
+    const ok = await executor.smokeCheck("http://127.0.0.1:3010/", 30_000);
+    if (!ok) {
+      throw new Error(
+        "LOCAL_SMOKE_FAILED: http://127.0.0.1:3010/ did not respond",
+      );
+    }
+  } catch (err) {
+    if (isFirstDeploy && newStackId !== null) {
+      try {
+        await executor.portainerRemove(deployEnv, newStackId);
+      } catch (rollbackErr) {
+        throw new Error(
+          `${(err as Error).message}; ROLLBACK_PORT_REMOVE: ${(rollbackErr as Error).message}`,
+        );
+      }
+    } else if (!isFirstDeploy && previousStack !== null) {
+      try {
+        await executor.portainerUpdate(
+          deployEnv,
+          previousStack.id,
+          previousStack.composeYaml,
+        );
+      } catch (rollbackErr) {
+        throw new Error(
+          `${(err as Error).message}; ROLLBACK_PORT_RESTORE: ${(rollbackErr as Error).message}`,
+        );
+      }
+    }
+    throw err;
+  }
+
+  // 8. Traefik stages
   const traefikConfigPath =
     env["TRAEFIK_CONFIG_PATH"] ?? "/home/charizard10/traefik/dynamic.yml";
   const traefikSmokeUrl =
     env["TRAEFIK_SMOKE_URL"] ?? "https://tools.local.dagdappshub.com/";
 
-  await executor.traefikBackupConfig(traefikConfigPath);
+  let traefikBackupPath: string | null = null;
 
-  // 9. Read current config, merge dag-tools block
-  const raw = existsSync(traefikConfigPath)
-    ? readFileSync(traefikConfigPath, "utf-8")
-    : "";
-  const block = buildDagToolsBlock();
-  const merged = mergeDagToolsBlock(raw, block);
+  try {
+    // 8a. Backup current dynamic config
+    traefikBackupPath = await executor.traefikBackupConfig(traefikConfigPath);
 
-  // 10. Write merged config
-  await executor.traefikWriteConfig(traefikConfigPath, merged);
+    // 8b. Read current config, merge dag-tools block
+    const raw = existsSync(traefikConfigPath)
+      ? readFileSync(traefikConfigPath, "utf-8")
+      : "";
+    const block = buildDagToolsBlock();
+    const merged = mergeDagToolsBlock(raw, block);
 
-  // 11. Restart Traefik
-  await executor.traefikRestart();
+    // 8c. Write merged config
+    try {
+      await executor.traefikWriteConfig(traefikConfigPath, merged);
+    } catch (err) {
+      throw new Error(
+        `TRAEFIK_CONFIG_WRITE_FAILED: ${(err as Error).message}`,
+      );
+    }
 
-  // 12. Public smoke check
-  const traefikOk = await executor.traefikSmokeCheck(traefikSmokeUrl, 30_000);
-  if (!traefikOk) {
-    throw new Error("Traefik smoke check failed");
+    // 8d. Restart Traefik
+    try {
+      await executor.traefikRestart();
+    } catch (err) {
+      throw new Error(
+        `TRAEFIK_RESTART_FAILED: ${(err as Error).message}`,
+      );
+    }
+
+    // 8e. Public smoke check
+    const traefikOk = await executor.traefikSmokeCheck(
+      traefikSmokeUrl,
+      30_000,
+    );
+    if (!traefikOk) {
+      throw new Error(
+        `PUBLIC_SMOKE_FAILED: ${traefikSmokeUrl} did not respond`,
+      );
+    }
+  } catch (err) {
+    if (traefikBackupPath) {
+      try {
+        await executor.traefikRestoreFromBackup(
+          traefikBackupPath,
+          traefikConfigPath,
+        );
+        await executor.traefikRestart();
+      } catch (rollbackErr) {
+        throw new Error(
+          `${(err as Error).message}; ROLLBACK_TRAEFIK_RESTORE: ${(rollbackErr as Error).message}`,
+        );
+      }
+    }
+    throw err;
   }
 }
 
@@ -206,7 +313,7 @@ async function realPortainerList(
 async function realPortainerCreate(
   env: DeployEnv,
   composeYaml: string,
-): Promise<void> {
+): Promise<number> {
   const composeBase64 = Buffer.from(composeYaml).toString("base64");
   const url = `${env.portainerUrl}/api/stacks`;
   const res = await fetch(url, {
@@ -225,6 +332,44 @@ async function realPortainerCreate(
   if (res.status !== 201 && res.status !== 200) {
     throw new Error(
       `Portainer create stack failed: ${res.status} ${await tryText(res)}`,
+    );
+  }
+  const json = (await res.json()) as { Id: number };
+  return json.Id;
+}
+
+async function realPortainerGetStack(
+  env: DeployEnv,
+  id: number,
+): Promise<{ Id: number; Name: string; StackFileContent: string }> {
+  const url = `${env.portainerUrl}/api/stacks/${id}?endpointId=${env.portainerEndpointId}`;
+  const res = await fetch(url, {
+    headers: { "X-API-Key": env.portainerApiKey },
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Portainer get stack failed: ${res.status} ${await tryText(res)}`,
+    );
+  }
+  return res.json() as Promise<{
+    Id: number;
+    Name: string;
+    StackFileContent: string;
+  }>;
+}
+
+async function realPortainerRemove(
+  env: DeployEnv,
+  id: number,
+): Promise<void> {
+  const url = `${env.portainerUrl}/api/stacks/${id}?endpointId=${env.portainerEndpointId}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { "X-API-Key": env.portainerApiKey },
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Portainer remove stack failed: ${res.status} ${await tryText(res)}`,
     );
   }
 }
@@ -286,6 +431,13 @@ async function realTraefikRestart(): Promise<void> {
   execFileSync("docker", ["restart", "traefik"], { stdio: "inherit" });
 }
 
+async function realTraefikRestoreFromBackup(
+  backupPath: string,
+  destPath: string,
+): Promise<void> {
+  restoreConfig(backupPath, destPath);
+}
+
 async function realTraefikSmokeCheck(
   url: string,
   timeoutMs: number,
@@ -311,12 +463,15 @@ export function defaultExecutor(): DeployExecutor {
     gitSha: realGitSha,
     dockerBuild: realDockerBuild,
     portainerList: realPortainerList,
+    portainerGetStack: realPortainerGetStack,
     portainerCreate: realPortainerCreate,
+    portainerRemove: realPortainerRemove,
     portainerUpdate: realPortainerUpdate,
     smokeCheck: realSmokeCheck,
     traefikBackupConfig: realTraefikBackupConfig,
     traefikWriteConfig: realTraefikWriteConfig,
     traefikRestart: realTraefikRestart,
+    traefikRestoreFromBackup: realTraefikRestoreFromBackup,
     traefikSmokeCheck: realTraefikSmokeCheck,
   };
 }
