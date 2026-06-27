@@ -138,6 +138,35 @@ test("non-PDF file is rejected at add-time with inline message", async ({ page }
   // Only the valid PDF is added — the txt is rejected
   await expect(page.getByTestId("source-card")).toHaveCount(2);
   await expect(page.getByTestId("source-card").nth(1)).toContainText("sample-2.pdf");
+
+  // Inline rejection panel shows the non-PDF reason
+  await expect(page.getByTestId("add-rejection-panel")).toBeVisible();
+  await expect(page.getByTestId("add-rejection-item").first()).toContainText("not-a-pdf.txt");
+  await expect(page.getByTestId("add-rejection-item").first()).toContainText("Not a PDF file");
+});
+
+test("duplicate file is rejected at add-time with inline message", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+
+  // Add sample-1.pdf
+  await input.setInputFiles(resolve(fixtures, "sample-1.pdf"));
+  await expect(page.getByTestId("source-card")).toHaveCount(1);
+
+  // Add sample-1.pdf again (duplicate) alongside sample-2.pdf
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+
+  // Only the new file is added — duplicate skipped from cards
+  await expect(page.getByTestId("source-card")).toHaveCount(2);
+
+  // Inline rejection panel shows the duplicate reason
+  await expect(page.getByTestId("add-rejection-panel")).toBeVisible();
+  await expect(page.getByTestId("add-rejection-item").first()).toContainText("sample-1.pdf");
+  await expect(page.getByTestId("add-rejection-item").first()).toContainText("Already in the list");
 });
 
 test("corrupt Source PDF shows inline error and keeps Combine disabled", async ({

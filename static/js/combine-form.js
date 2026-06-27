@@ -76,7 +76,7 @@
         // Duplicate gate (name + size + lastModified)
         var key = dupKey(file);
         if (existingKeys[key]) {
-          // Silently skip duplicates — no user-visible message per spec
+          rejected.push({ name: file.name, reason: "duplicate" });
           continue;
         }
         existingKeys[key] = true;
@@ -396,15 +396,51 @@
       }
     }
 
-    function handleRejected(rejected) {
+    function addRejectionLabel(reason) {
+      var labels = {
+        "duplicate": "Already in the list",
+        "not-a-pdf": "Not a PDF file",
+        "over-limit": "Would exceed the 50 MB total limit",
+      };
+      return labels[reason] || reason;
+    }
+
+    function buildRejectionPanel(rejected) {
+      var lines = "";
       for (var i = 0; i < rejected.length; i++) {
-        var r = rejected[i];
-        if (r.reason === "not-a-pdf") {
-          alert(r.name + " is not a PDF file.");
-        } else if (r.reason === "over-limit") {
-          alert(r.name + " would exceed the 50 MB total limit.");
-        }
+        lines +=
+          '<div class="flex items-start gap-1.5 text-xs text-red-700" data-testid="add-rejection-item">' +
+          '<span aria-hidden="true">\u2716</span>' +
+          "<span>" +
+          escapeHtml(rejected[i].name) +
+          " \u2014 " +
+          escapeHtml(addRejectionLabel(rejected[i].reason)) +
+          "</span>" +
+          "</div>";
       }
+      return (
+        '<div id="add-rejection-panel" data-testid="add-rejection-panel" role="status" aria-live="polite" class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 flex flex-col gap-1">' +
+        lines +
+        "</div>"
+      );
+    }
+
+    function showRejected(rejected) {
+      if (rejected.length === 0) return;
+
+      // Remove any previous rejection panel
+      var prev = document.getElementById("add-rejection-panel");
+      if (prev) prev.remove();
+
+      // Insert new panel right after the drop zone
+      var panelHtml = buildRejectionPanel(rejected);
+      dropZone.insertAdjacentHTML("afterend", panelHtml);
+
+      // Auto-dismiss after 6 seconds
+      setTimeout(function () {
+        var panel = document.getElementById("add-rejection-panel");
+        if (panel) panel.remove();
+      }, 6000);
     }
 
     // -------------------------------------------------------------------
@@ -430,7 +466,7 @@
       inputEl.value = "";
 
       var result = selection.add(files);
-      handleRejected(result.rejected);
+      showRejected(result.rejected);
       preflightAdded(result.added);
       
     });
@@ -473,7 +509,7 @@
       inputEl.value = "";
 
       var result = selection.add(e.dataTransfer.files);
-      handleRejected(result.rejected);
+      showRejected(result.rejected);
       preflightAdded(result.added);
     });
 
