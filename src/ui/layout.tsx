@@ -11,10 +11,10 @@ export const Layout = ({
   currentPath?: string;
   bodyClass?: string;
 }) => {
-  const toolsActive =
-    currentPath === "/" ||
-    currentPath.startsWith("/pdf/") ||
-    currentPath.startsWith("/links/");
+  // Category links are only active via client-side hash (home-nav.js).
+  // Server-side, neither PDF Tools nor QR Tools carries aria-current.
+  const pdfToolsActive = false;
+  const qrToolsActive = false;
   const helpActive = currentPath === "/help";
 
   const navLinkClass = (active: boolean): string =>
@@ -34,6 +34,7 @@ export const Layout = ({
         <script src="/static/js/combine-form.js" defer />
         <script src="/static/js/split-form.js" defer />
         <script src="/static/js/qr-form.js" defer />
+        <script src="/static/js/home-nav.js" defer />
       </head>
       <body class={`min-h-full flex flex-col text-ink ${bodyClass}`}>
         <header>
@@ -51,16 +52,16 @@ export const Layout = ({
               <a
                 href="/#pdf-tools"
                 data-testid="nav-pdf-tools"
-                aria-current={toolsActive ? "page" : undefined}
-                class={navLinkClass(toolsActive)}
+                aria-current={pdfToolsActive ? "page" : undefined}
+                class={navLinkClass(pdfToolsActive)}
               >
                 PDF Tools
               </a>
               <a
                 href="/#qr-tools"
                 data-testid="nav-qr-tools"
-                aria-current={toolsActive ? "page" : undefined}
-                class={navLinkClass(toolsActive)}
+                aria-current={qrToolsActive ? "page" : undefined}
+                class={navLinkClass(qrToolsActive)}
               >
                 QR Tools
               </a>

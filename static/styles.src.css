@@ -16,8 +16,11 @@
   --color-accent-soft: #8b5cf6;
   --color-hairline: #27272a;
   --color-muted: #52525b;
+}
 
-  /* Home-scoped Kanagawa palette — additive tokens; do NOT edit the violet theme above. */
+/* Home-scoped Kanagawa palette — variables only defined inside .page-home.
+   The global @theme block above is untouched (violet tokens). */
+.page-home {
   --color-home-bg: #051424;
   --color-home-surface: #122131;
   --color-home-border: #45464d;
@@ -30,4 +33,20 @@
   --color-home-qr-cta: #b2ccc1;
   --color-home-pdf-bar: #ffb3b0;
   --color-home-qr-bar: #b2ccc1;
+}
+
+@utility bg-home-bg {
+  background-color: var(--color-home-bg);
+}
+@utility bg-home-icon-tile {
+  background-color: var(--color-home-icon-tile);
+}
+@utility bg-home-surface {
+  background-color: var(--color-home-surface);
+}
+@utility text-home-text-primary {
+  color: var(--color-home-text-primary);
+}
+@utility text-home-text-secondary {
+  color: var(--color-home-text-secondary);
 }

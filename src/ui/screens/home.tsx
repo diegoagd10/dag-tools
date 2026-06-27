@@ -240,7 +240,7 @@ const SectionBlock = ({
 
 export const Home = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="dag-tools — A small workshop of file tools" currentPath={currentPath} bodyClass="bg-home-bg">
+    <Layout title="dag-tools — A small workshop of file tools" currentPath={currentPath} bodyClass="page-home bg-home-bg">
       {/* Widen the main content for home only by overriding the max-w via a wrapper */}
       <div class="-mx-6 px-6 sm:-mx-8 sm:px-8" style="max-width: 64rem; width: 100%; align-self: center;">
         <div class="flex flex-col gap-12 pt-4">

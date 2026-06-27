@@ -62,9 +62,10 @@ describe("Global chrome on Tool form pages", () => {
 
       expectChrome(html);
 
-      // PDF Tools and QR Tools are the active nav links on every Tool page
-      expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
-      expect(html).toMatch(/data-testid="nav-qr-tools"[^>]*aria-current="page"/);
+      // On non-home pages, neither PDF Tools nor QR Tools is active.
+      // (On /, activation is client-side via home-nav.js hash listener.)
+      expect(html).not.toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
+      expect(html).not.toMatch(/data-testid="nav-qr-tools"[^>]*aria-current="page"/);
       // Help is not active on Tool pages
       expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
     });
@@ -100,13 +101,13 @@ describe("Global chrome on Share and error pages", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("renders chrome on the QR Share page (/links/qr/:id) with Tools active", async () => {
+  it("renders chrome on the QR Share page (/links/qr/:id) with no category link active", async () => {
     const res = await app.request(`/links/qr/${qrShareId}`);
     expect(res.status).toBe(200);
     const html = await res.text();
 
     expectChrome(html);
-    expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
+    expect(html).not.toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
     expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
   });
 
@@ -117,13 +118,13 @@ describe("Global chrome on Share and error pages", () => {
   ];
 
   for (const { label, path } of notFoundPages) {
-    it(`renders chrome on ${label} (${path}) with Tools active`, async () => {
+    it(`renders chrome on ${label} (${path}) with no category link active`, async () => {
       const res = await app.request(path);
       expect(res.status).toBe(404);
       const html = await res.text();
 
       expectChrome(html);
-      expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
+      expect(html).not.toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
       expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
     });
   }
