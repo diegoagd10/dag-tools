@@ -18,6 +18,7 @@
   var MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
   var VALIDATE_URL = "/api/v1/pdf/split/validate";
   var validationAbort = null;
+  var magicByteSeq = 0;
 
   // -------------------------------------------------------------------
   // State
@@ -299,7 +300,12 @@
     }
 
     // Magic bytes gate (%PDF-)
+    magicByteSeq++;
+    var magicToken = magicByteSeq;
     validateMagicBytes(file, function (isValid) {
+      // Stale-callback guard: if a newer selection arrived while reading, abort
+      if (magicToken !== magicByteSeq) return;
+
       if (!isValid) {
         selectedFile = null;
         clearFileInput();

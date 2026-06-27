@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 
@@ -176,5 +177,70 @@ test("PDF Split — CTA gating: disabled until valid selection, enabled after pr
   // Enabled after preflight
   await expect(page.getByTestId("split-button")).toBeEnabled({ timeout: 5000 });
   await expect(page.getByTestId("split-button")).toContainText("1 page");
+  await expect(page.getByTestId("split-hint")).toBeHidden();
+});
+
+test("PDF Split — drag-and-drop valid PDF onto drop zone shows card and enables CTA", async ({
+  page,
+}) => {
+  await page.goto("/pdf/split");
+
+  // Wait for JS controller to initialise
+  await page.waitForFunction(() => window.__splitSelection !== undefined);
+
+  // Read fixture PDF and pass as base64 to the browser
+  const pdfPath = resolve(fixtures, "sample-multi-page.pdf");
+  const pdfBuffer = readFileSync(pdfPath);
+  const pdfBase64 = pdfBuffer.toString("base64");
+
+  // Dispatch real drag-and-drop events on the drop zone
+  await page.evaluate(
+    ({ base64, name, mime }) => {
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: mime });
+      const file = new File([blob], name, { type: mime });
+
+      const dt = new DataTransfer();
+      dt.items.add(file);
+
+      const zone = document.querySelector("[data-testid='drop-zone']");
+      if (!zone) throw new Error("drop-zone not found");
+
+      for (const type of ["dragenter", "dragover"]) {
+        zone.dispatchEvent(
+          new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+      }
+
+      zone.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: dt,
+        }),
+      );
+    },
+    {
+      base64: pdfBase64,
+      name: "sample-multi-page.pdf",
+      mime: "application/pdf",
+    },
+  );
+
+  // Card appears with filename, page-count, and size
+  const card = page.getByTestId("split-selected-card");
+  await expect(card).toBeVisible({ timeout: 5000 });
+  await expect(page.getByTestId("split-card-name")).toHaveText(
+    "sample-multi-page.pdf",
+  );
+  await expect(card).toContainText(/3 pages/);
+
+  // CTA enabled, hint hidden
+  await expect(page.getByTestId("split-button")).toBeEnabled({ timeout: 5000 });
+  await expect(page.getByTestId("split-button")).toContainText("3 pages");
   await expect(page.getByTestId("split-hint")).toBeHidden();
 });
