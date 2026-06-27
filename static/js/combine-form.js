@@ -221,6 +221,7 @@
     var dropZone = document.getElementById("drop-zone");
     var removed = {}; // id -> true for in-flight preflight guard
     var sortableInst = null;
+    var rejectionTimer = null; // timeout id for auto-dismiss of rejection panel
 
     // -------------------------------------------------------------------
     // Formatting
@@ -425,6 +426,17 @@
       );
     }
 
+    function setRejectionTimer(panel) {
+      if (rejectionTimer !== null) {
+        clearTimeout(rejectionTimer);
+        rejectionTimer = null;
+      }
+      rejectionTimer = setTimeout(function () {
+        if (panel && panel.parentNode) panel.remove();
+        rejectionTimer = null;
+      }, 6000);
+    }
+
     function showRejected(rejected) {
       if (rejected.length === 0) return;
 
@@ -436,11 +448,9 @@
       var panelHtml = buildRejectionPanel(rejected);
       dropZone.insertAdjacentHTML("afterend", panelHtml);
 
-      // Auto-dismiss after 6 seconds
-      setTimeout(function () {
-        var panel = document.getElementById("add-rejection-panel");
-        if (panel) panel.remove();
-      }, 6000);
+      // Auto-dismiss after 6 seconds, clearing any previous timer first
+      var panel = document.getElementById("add-rejection-panel");
+      if (panel) setRejectionTimer(panel);
     }
 
     // -------------------------------------------------------------------

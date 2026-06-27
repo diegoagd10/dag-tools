@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { openSync, writeSync, ftruncateSync, closeSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
@@ -280,4 +282,53 @@ test("less than 2 valid Source PDFs keeps Combine disabled with hint", async ({ 
   await expect(page.getByTestId("source-card")).toHaveCount(0);
   await expect(page.getByTestId("combine-button")).toBeDisabled();
   await expect(page.getByTestId("combine-hint")).toBeVisible();
+});
+
+test("oversized file (>50 MB) is rejected at add-time, button stays disabled", async ({
+  page,
+}) => {
+  // Build a synthetic PDF blob sized just over the 50 MB cap with a valid
+  // PDF header so it survives the extension gate.  Use ftruncate for a
+  // sparse file — reports 51 MB stat size without allocating 51 MB of blocks.
+  const tmpPath = resolve(tmpdir(), "oversized-huge-report.pdf");
+  const header = Buffer.from("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const fd = openSync(tmpPath, "w");
+  try {
+    writeSync(fd, header, 0, header.length, 0);
+    ftruncateSync(fd, 51 * 1024 * 1024);
+  } finally {
+    closeSync(fd);
+  }
+
+  try {
+    await page.goto("/pdf/combine");
+
+    const input = page.getByTestId("drop-zone-input");
+
+    // Add one valid small PDF alongside the oversized file
+    await input.setInputFiles([
+      resolve(fixtures, "sample-1.pdf"),
+      tmpPath,
+    ]);
+
+    // Only the small file appears in the list — oversized was rejected
+    await expect(page.getByTestId("source-card")).toHaveCount(1);
+    await expect(page.getByTestId("source-card").nth(0)).toContainText(
+      "sample-1.pdf",
+    );
+
+    // Inline rejection panel shows the oversized file with over-limit reason
+    await expect(page.getByTestId("add-rejection-panel")).toBeVisible();
+    await expect(page.getByTestId("add-rejection-item").first()).toContainText(
+      "oversized-huge-report.pdf",
+    );
+    await expect(page.getByTestId("add-rejection-item").first()).toContainText(
+      "50 MB",
+    );
+
+    // Combine stays disabled — only 1 valid file (need >= 2)
+    await expect(page.getByTestId("combine-button")).toBeDisabled();
+  } finally {
+    unlinkSync(tmpPath);
+  }
 });
