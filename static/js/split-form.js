@@ -95,12 +95,15 @@
           ? "1 page"
           : selectedFile.pageCount + " pages";
       statusText =
-        '<span class="text-xs text-split-secondary tabular-nums">' +
+        '<span class="text-xs text-split-secondary tabular-nums font-mono">' +
         pagesText +
         " • " +
         formatBytes(selectedFile.size) +
         "</span>";
     }
+
+    // Reveal container first so screen-reader live region announces the content change
+    showCard();
 
     cardSlot.innerHTML =
       '<div class="mt-3 rounded-lg border border-split-border bg-split-surface px-4 py-3 flex items-center gap-3" data-testid="split-selected-card">' +
@@ -123,8 +126,6 @@
       "</svg>" +
       "</button>" +
       "</div>";
-
-    showCard();
   }
 
   function showCard() {
