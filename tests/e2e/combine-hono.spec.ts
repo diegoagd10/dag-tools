@@ -3,6 +3,15 @@ import { openSync, writeSync, ftruncateSync, closeSync, unlinkSync } from "node:
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
+declare global {
+  interface Window {
+    __combineSelection?: {
+      items(): Array<{ id: string; name: string; size: number; status: string; reason: string | null }>;
+      reorder(ids: string[]): void;
+    };
+  }
+}
+
 const fixtures = resolve(process.cwd(), "tests", "fixtures");
 
 test("renders combine form with drop-zone and disabled submit", async ({ page }) => {
@@ -87,7 +96,7 @@ test("dragging cards reorders them and submit produces pages in Merge Order", as
 
   // Reorder by swapping card positions via the Selection module
   await page.evaluate(() => {
-    const sel = (window as any).__combineSelection;
+    const sel = window.__combineSelection;
     if (!sel) return;
     const items = sel.items();
     if (items.length < 2) return;
