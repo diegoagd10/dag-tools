@@ -1,0 +1,28 @@
+# dependencies
+node_modules
+
+# vcs
+.git
+
+# e2e tests (not needed at runtime)
+tests/e2e
+
+# test artifacts
+coverage
+test-results
+playwright-report
+blob-report
+playwright/.cache
+
+# local dev runtime data
+data
+storage
+
+# build artifacts
+dist
+
+# misc
+.DS_Store
+*.log
+.env*
+*.tsbuildinfo
