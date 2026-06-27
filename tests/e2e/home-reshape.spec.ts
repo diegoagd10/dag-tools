@@ -59,4 +59,30 @@ test.describe("Home page reshape S1", () => {
     await expect(page).toHaveURL(/\/.*#qr-tools/);
     await expect(page.locator("#qr-tools")).toBeVisible();
   });
+
+  test("nav link aria-current follows URL hash on home page", async ({
+    page,
+  }) => {
+    await page.goto("/#qr-tools");
+    await page.waitForSelector(
+      '[data-testid="nav-qr-tools"][aria-current="page"]',
+    );
+    await expect(
+      page.locator('[data-testid="nav-qr-tools"]'),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.locator('[data-testid="nav-pdf-tools"]'),
+    ).not.toHaveAttribute("aria-current");
+
+    await page.click('[data-testid="nav-pdf-tools"]');
+    await page.waitForSelector(
+      '[data-testid="nav-pdf-tools"][aria-current="page"]',
+    );
+    await expect(
+      page.locator('[data-testid="nav-pdf-tools"]'),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.locator('[data-testid="nav-qr-tools"]'),
+    ).not.toHaveAttribute("aria-current");
+  });
 });
