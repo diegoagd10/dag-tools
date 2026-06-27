@@ -133,3 +133,7 @@ ethos):
 - The To-Epub placeholder advertises a future capability. If EPUB never ships, the card should
   be removed; if it does ship, the placeholder becomes a real linked card and a new route is
   added.
+
+## Divergence from issue #48 implementation
+
+Issue #48 overrides ADR scope on one point: **the category nav links (`PDF Tools` / `QR Tools`) are placed in the global `src/ui/layout.tsx` instead of being home-page-only**. The ADR placed them in the home view only; the issue (and completed implementation) puts them in the shared `Layout` so they appear on every page as `/#pdf-tools` and `/#qr-tools` anchors. This gives in-page scroll on the home route and navigate-then-scroll from other pages.
