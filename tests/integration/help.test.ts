@@ -13,7 +13,8 @@ const HAIRLINE = "linear-gradient(to right, var(--color-accent), transparent)";
 function expectChrome(html: string): void {
   expect(html).toContain("DAG Tools");
   expect(html).toContain('href="/"');
-  expect(html).toContain('data-testid="nav-tools"');
+  expect(html).toContain('data-testid="nav-pdf-tools"');
+  expect(html).toContain('data-testid="nav-qr-tools"');
   expect(html).toContain('data-testid="nav-help"');
   expect(html).toContain('href="/help"');
   expect(html).toContain(HAIRLINE);
@@ -69,7 +70,7 @@ describe("GET /help", () => {
     const html = await res.text();
 
     expect(html).toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
-    expect(html).not.toMatch(/data-testid="nav-tools"[^>]*aria-current="page"/);
+    expect(html).not.toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
   });
 
   it("answers honestly: supported formats, 50 MB limit, QR links permanent (Artifacts persist, no TTL), how to combine/split PDFs", async () => {

@@ -4,10 +4,12 @@ export const Layout = ({
   children,
   title,
   currentPath = "",
+  bodyClass = "bg-paper",
 }: {
   children?: unknown;
   title: string;
   currentPath?: string;
+  bodyClass?: string;
 }) => {
   const toolsActive =
     currentPath === "/" ||
@@ -33,7 +35,7 @@ export const Layout = ({
         <script src="/static/js/split-form.js" defer />
         <script src="/static/js/qr-form.js" defer />
       </head>
-      <body class="min-h-full flex flex-col bg-paper text-ink">
+      <body class={`min-h-full flex flex-col text-ink ${bodyClass}`}>
         <header>
           <nav
             aria-label="Primary"
@@ -47,12 +49,20 @@ export const Layout = ({
             </a>
             <div class="flex items-center gap-6">
               <a
-                href="/"
-                data-testid="nav-tools"
+                href="/#pdf-tools"
+                data-testid="nav-pdf-tools"
                 aria-current={toolsActive ? "page" : undefined}
                 class={navLinkClass(toolsActive)}
               >
-                Tools
+                PDF Tools
+              </a>
+              <a
+                href="/#qr-tools"
+                data-testid="nav-qr-tools"
+                aria-current={toolsActive ? "page" : undefined}
+                class={navLinkClass(toolsActive)}
+              >
+                QR Tools
               </a>
               <a
                 href="/help"

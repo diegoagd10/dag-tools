@@ -16,4 +16,18 @@
   --color-accent-soft: #8b5cf6;
   --color-hairline: #27272a;
   --color-muted: #52525b;
+
+  /* Home-scoped Kanagawa palette — additive tokens; do NOT edit the violet theme above. */
+  --color-home-bg: #051424;
+  --color-home-surface: #122131;
+  --color-home-border: #45464d;
+  --color-home-icon-tile: #1c2b3c;
+  --color-home-text-primary: #d4e4fa;
+  --color-home-text-secondary: #c6c6cd;
+  --color-home-pdf-accent: #ffb3b0;
+  --color-home-pdf-cta: #cb5f5f;
+  --color-home-qr-accent: #b2ccc1;
+  --color-home-qr-cta: #b2ccc1;
+  --color-home-pdf-bar: #ffb3b0;
+  --color-home-qr-bar: #b2ccc1;
 }

@@ -21,16 +21,17 @@ describe("Home route", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with all three tool cards (PDF Combine, PDF Split, QR Code) on /", async () => {
+  it("returns 200 with two category sections on /", async () => {
     const app = createApp({ db, storageDir });
     const res = await app.request("/");
 
     expect(res.status).toBe(200);
 
     const text = await res.text();
-    expect(text).toContain("PDF Combine");
-    expect(text).toContain("PDF Split");
-    expect(text).toContain("QR Code");
+    expect(text).toContain("PDF Tools");
+    expect(text).toContain("QR Tools");
+    expect(text).toContain("3 UTILITIES");
+    expect(text).toContain("1 UTILITY");
   });
 
   it("returns HTML content type", async () => {
@@ -40,37 +41,49 @@ describe("Home route", () => {
     expect(res.headers.get("content-type")).toContain("text/html");
   });
 
-  it("renders a restyled tool grid with the three working tools as links", async () => {
+  it("renders four cards with correct titles and routes", async () => {
     const app = createApp({ db, storageDir });
     const res = await app.request("/");
 
     const text = await res.text();
 
-    // Grid container using CSS grid layout.
-    expect(text).toContain('data-testid="tool-grid"');
-    expect(text).toMatch(/class="[^"]*\bgrid\b[^"]*grid-cols[^"]*"/);
-
-    // Each canonical card links to its working route.
+    expect(text).toContain("Merge");
+    expect(text).toContain("Split");
+    expect(text).toContain("To-Epub");
+    expect(text).toContain("Generate");
     expect(text).toContain('href="/pdf/combine"');
     expect(text).toContain('href="/pdf/split"');
     expect(text).toContain('href="/links/qr"');
   });
 
-  it("counts only working tools in the available-now badge", async () => {
+  it("renders To-Epub as non-interactive with COMING SOON and no launch link", async () => {
     const app = createApp({ db, storageDir });
     const res = await app.request("/");
 
     const text = await res.text();
-    expect(text).toMatch(
-      /data-testid="tools-available-count"[^>]*>\s*3 of 3\s*</,
-    );
+    expect(text).toContain("COMING SOON");
+    expect(text).toContain("To-Epub");
+    // The To-Epub name must not appear inside an <a> tag — no href.
+    // We check that "To-Epub" is never immediately preceded by an <a href pattern.
+    expect(text).not.toMatch(/href="[^"]*"[^>]*>\s*[^<]*To-Epub/);
   });
 
-  it("does not surface renamed cards or prohibited copy", async () => {
+  it("renders nav with PDF Tools and QR Tools anchors", async () => {
     const app = createApp({ db, storageDir });
     const res = await app.request("/");
 
     const text = await res.text();
+    expect(text).toContain('href="/#pdf-tools"');
+    expect(text).toContain('href="/#qr-tools"');
+  });
+
+  it("does not surface old card titles or prohibited copy", async () => {
+    const app = createApp({ db, storageDir });
+    const res = await app.request("/");
+
+    const text = await res.text();
+    expect(text).not.toContain("PDF Combine");
+    expect(text).not.toContain("PDF Split");
     expect(text).not.toContain("Merge PDF");
     expect(text).not.toContain("QR Code Generator");
     expect(text).not.toContain("Sign In");

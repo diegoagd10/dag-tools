@@ -15,7 +15,8 @@ function expectChrome(html: string): void {
   expect(html).toContain("DAG Tools");
   expect(html).toContain('href="/"');
   // Nav links
-  expect(html).toContain('data-testid="nav-tools"');
+  expect(html).toContain('data-testid="nav-pdf-tools"');
+  expect(html).toContain('data-testid="nav-qr-tools"');
   expect(html).toContain('data-testid="nav-help"');
   expect(html).toContain('href="/help"');
   // Gradient hairline using the accent token, no new color values
@@ -61,8 +62,9 @@ describe("Global chrome on Tool form pages", () => {
 
       expectChrome(html);
 
-      // Tools is the active nav link on every Tool page
-      expect(html).toMatch(/data-testid="nav-tools"[^>]*aria-current="page"/);
+      // PDF Tools and QR Tools are the active nav links on every Tool page
+      expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
+      expect(html).toMatch(/data-testid="nav-qr-tools"[^>]*aria-current="page"/);
       // Help is not active on Tool pages
       expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
     });
@@ -104,7 +106,7 @@ describe("Global chrome on Share and error pages", () => {
     const html = await res.text();
 
     expectChrome(html);
-    expect(html).toMatch(/data-testid="nav-tools"[^>]*aria-current="page"/);
+    expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
     expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
   });
 
@@ -121,7 +123,7 @@ describe("Global chrome on Share and error pages", () => {
       const html = await res.text();
 
       expectChrome(html);
-      expect(html).toMatch(/data-testid="nav-tools"[^>]*aria-current="page"/);
+      expect(html).toMatch(/data-testid="nav-pdf-tools"[^>]*aria-current="page"/);
       expect(html).not.toMatch(/data-testid="nav-help"[^>]*aria-current="page"/);
     });
   }
@@ -151,7 +153,7 @@ describe("Global chrome stays out of fragments", () => {
 
     // Fragment only — no full-page chrome
     expect(html).not.toContain("<html");
-    expect(html).not.toContain('data-testid="nav-tools"');
+    expect(html).not.toContain('data-testid="nav-pdf-tools"');
     expect(html).not.toContain(HAIRLINE);
   });
 });
