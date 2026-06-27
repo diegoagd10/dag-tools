@@ -160,6 +160,63 @@ test("PDF Split — rejects corrupt PDF via preflight with inline message", asyn
   await expect(page.getByTestId("split-button")).toHaveText("Split PDF");
 });
 
+test("PDF Split — successful split renders success fragment with download link and Return to Split Tool resets to empty screen", async ({
+  page,
+}) => {
+  await page.goto("/pdf/split");
+
+  // Select a valid PDF
+  const input = page.getByTestId("split-file-input");
+  await input.setInputFiles(resolve(fixtures, "sample-multi-page.pdf"));
+
+  // Wait for card and enabled CTA
+  await expect(page.getByTestId("split-selected-card")).toBeVisible({
+    timeout: 5000,
+  });
+  await expect(page.getByTestId("split-button")).toBeEnabled({ timeout: 5000 });
+
+  // Submit the split
+  await page.getByTestId("split-button").click();
+
+  // Wait for the success fragment to appear (replaces #split-result via htmx)
+  await expect(page.locator("#split-result")).toContainText(
+    "Files Split Successfully",
+    { timeout: 15000 },
+  );
+
+  // Assert download link target is /pdf/split/:id
+  const downloadLink = page.locator("#split-result a[download]");
+  await expect(downloadLink).toBeVisible({ timeout: 5000 });
+  const href = await downloadLink.getAttribute("href");
+  expect(href).toMatch(/\/pdf\/split\/[A-Za-z0-9_-]{12}/);
+
+  // Assert presence of primary action text
+  await expect(page.locator("#split-result")).toContainText(
+    "Download Files (ZIP)",
+  );
+
+  // Assert presence of secondary action
+  const returnLink = page.locator("#split-result a", {
+    hasText: "Return to Split Tool",
+  });
+  await expect(returnLink).toBeVisible();
+  expect(await returnLink.getAttribute("href")).toBe("/pdf/split");
+
+  // Click Return to Split Tool
+  await returnLink.click();
+  await page.waitForURL("/pdf/split");
+
+  // Assert we're back on a fresh split page with drop zone visible
+  await expect(page.getByTestId("drop-zone")).toBeVisible({ timeout: 5000 });
+  // Assert heading is correct
+  await expect(page.locator("h1")).toHaveText("Split a PDF Document");
+  // Assert CTA is disabled (no carried-over selection)
+  await expect(page.getByTestId("split-button")).toBeDisabled();
+  await expect(page.getByTestId("split-button")).toHaveText("Split PDF");
+  // Assert no selected-file card (fresh load)
+  await expect(page.getByTestId("split-selected-card")).toBeHidden();
+});
+
 test("PDF Split — CTA gating: disabled until valid selection, enabled after preflight", async ({
   page,
 }) => {

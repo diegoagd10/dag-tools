@@ -38,7 +38,7 @@ describe("POST /api/v1/pdf/split", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Share Link in the HTML fragment (happy path)", async () => {
+  it("returns 200 with a success fragment containing download link and no share URL field (happy path)", async () => {
     const fd = buildFormData("sample-multi-page.pdf");
     const res = await app.request("/api/v1/pdf/split", {
       method: "POST",
@@ -53,8 +53,17 @@ describe("POST /api/v1/pdf/split", () => {
     // Should not be a full HTML page (fragment only)
     expect(html).not.toContain("<!DOCTYPE html>");
     expect(html).not.toContain("<html");
-    // Should mention split context
-    expect(html).toContain("Split PDFs ready");
+    // Should contain the new success fragment content
+    expect(html).toContain("Files Split Successfully");
+    expect(html).toContain("Download Files (ZIP)");
+    expect(html).toContain("Return to Split Tool");
+    expect(html).toContain("Your Split ZIP archive");
+    // Should NOT contain the ShareLinkPanel copy-URL field text
+    expect(html).not.toContain("Share the link below");
+    // Should NOT contain a readonly text input (copy-URL field)
+    expect(html).not.toContain('type="text"');
+    // Should contain the download anchor with download attribute
+    expect(html).toContain("download");
   });
 
   it("persists an artifact row in the database", async () => {
