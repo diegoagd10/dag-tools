@@ -11,11 +11,16 @@
  *  5. GET /api/stacks — find STACK_NAME (case-insensitive).
  *  6. POST /api/stacks (create) or PUT /api/stacks/:id (update).
  *  7. Smoke check http://127.0.0.1:3010/ until 2xx or timeout.
+ *  8. Backup Traefik dynamic config.
+ *  9. Merge dag-tools router + service marker block into config.
+ * 10. Write merged config, restart Traefik container.
+ * 11. Public smoke check https://tools.local.dagdappshub.com/.
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { backupConfig, buildDagToolsBlock, mergeDagToolsBlock } from "./traefik-config";
 
 // ── Public types ────────────────────────────────────────────────────────────
 
@@ -39,6 +44,10 @@ export interface DeployExecutor {
     composeYaml: string,
   ): Promise<void>;
   smokeCheck(url: string, timeoutMs: number): Promise<boolean>;
+  traefikBackupConfig(path: string): Promise<string>;
+  traefikWriteConfig(path: string, content: string): Promise<void>;
+  traefikRestart(): Promise<void>;
+  traefikSmokeCheck(url: string, timeoutMs: number): Promise<boolean>;
 }
 
 // ── Core orchestration (testable seam) ──────────────────────────────────────
@@ -109,6 +118,33 @@ services:
     throw new Error(
       "Smoke check failed: app not responding on http://127.0.0.1:3010/",
     );
+  }
+
+  // 8. Traefik: backup current dynamic config
+  const traefikConfigPath =
+    env["TRAEFIK_CONFIG_PATH"] ?? "/home/charizard10/traefik/dynamic.yml";
+  const traefikSmokeUrl =
+    env["TRAEFIK_SMOKE_URL"] ?? "https://tools.local.dagdappshub.com/";
+
+  await executor.traefikBackupConfig(traefikConfigPath);
+
+  // 9. Read current config, merge dag-tools block
+  const raw = existsSync(traefikConfigPath)
+    ? readFileSync(traefikConfigPath, "utf-8")
+    : "";
+  const block = buildDagToolsBlock();
+  const merged = mergeDagToolsBlock(raw, block);
+
+  // 10. Write merged config
+  await executor.traefikWriteConfig(traefikConfigPath, merged);
+
+  // 11. Restart Traefik
+  await executor.traefikRestart();
+
+  // 12. Public smoke check
+  const traefikOk = await executor.traefikSmokeCheck(traefikSmokeUrl, 30_000);
+  if (!traefikOk) {
+    throw new Error("Traefik smoke check failed");
   }
 }
 
@@ -235,6 +271,28 @@ async function realSmokeCheck(
   return false;
 }
 
+async function realTraefikBackupConfig(path: string): Promise<string> {
+  return backupConfig(path);
+}
+
+async function realTraefikWriteConfig(
+  path: string,
+  content: string,
+): Promise<void> {
+  writeFileSync(path, content, "utf-8");
+}
+
+async function realTraefikRestart(): Promise<void> {
+  execFileSync("docker", ["restart", "traefik"], { stdio: "inherit" });
+}
+
+async function realTraefikSmokeCheck(
+  url: string,
+  timeoutMs: number,
+): Promise<boolean> {
+  return realSmokeCheck(url, timeoutMs);
+}
+
 async function tryText(res: Response): Promise<string> {
   try {
     return await res.text();
@@ -256,6 +314,10 @@ export function defaultExecutor(): DeployExecutor {
     portainerCreate: realPortainerCreate,
     portainerUpdate: realPortainerUpdate,
     smokeCheck: realSmokeCheck,
+    traefikBackupConfig: realTraefikBackupConfig,
+    traefikWriteConfig: realTraefikWriteConfig,
+    traefikRestart: realTraefikRestart,
+    traefikSmokeCheck: realTraefikSmokeCheck,
   };
 }
 

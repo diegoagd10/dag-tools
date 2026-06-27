@@ -21,6 +21,16 @@ class FakeExecutor implements DeployExecutor {
   smokeCheckCalls: { url: string; timeoutMs: number }[] = [];
   smokeCheckResult = true;
 
+  traefikBackupCalls: string[] = [];
+  traefikBackupResult = "/tmp/fake-backup.yml.bak.123";
+
+  traefikWriteCalls: { path: string; content: string }[] = [];
+
+  traefikRestartCalls = 0;
+
+  traefikSmokeCheckCalls: { url: string; timeoutMs: number }[] = [];
+  traefikSmokeCheckResult = true;
+
   readDotenv(_path: string): Record<string, string> {
     return { ...this.dotenvContent };
   }
@@ -61,6 +71,27 @@ class FakeExecutor implements DeployExecutor {
   async smokeCheck(url: string, timeoutMs: number): Promise<boolean> {
     this.smokeCheckCalls.push({ url, timeoutMs });
     return this.smokeCheckResult;
+  }
+
+  async traefikBackupConfig(path: string): Promise<string> {
+    this.traefikBackupCalls.push(path);
+    return this.traefikBackupResult;
+  }
+
+  async traefikWriteConfig(path: string, content: string): Promise<void> {
+    this.traefikWriteCalls.push({ path, content });
+  }
+
+  async traefikRestart(): Promise<void> {
+    this.traefikRestartCalls++;
+  }
+
+  async traefikSmokeCheck(
+    url: string,
+    timeoutMs: number,
+  ): Promise<boolean> {
+    this.traefikSmokeCheckCalls.push({ url, timeoutMs });
+    return this.traefikSmokeCheckResult;
   }
 }
 
@@ -216,5 +247,93 @@ describe("deploy script", () => {
     expect(env.portainerUrl).toBe("https://custom:1234");
     expect(env.portainerEndpointId).toBe(5);
     expect(env.stackName).toBe("custom-stack");
+  });
+
+  // ── Traefik stage ──────────────────────────────────────────────────────
+
+  it("traefik stage runs after portainer smoke check succeeds", async () => {
+    await main(executor);
+
+    // Traefik backup must have been called
+    expect(executor.traefikBackupCalls).toHaveLength(1);
+    expect(executor.traefikBackupCalls[0]).toBe(
+      "/home/charizard10/traefik/dynamic.yml",
+    );
+
+    // Traefik write must have been called
+    expect(executor.traefikWriteCalls).toHaveLength(1);
+
+    // Traefik restart must have been called
+    expect(executor.traefikRestartCalls).toBe(1);
+
+    // Traefik smoke check must have been called
+    expect(executor.traefikSmokeCheckCalls).toHaveLength(1);
+    expect(executor.traefikSmokeCheckCalls[0].url).toBe(
+      "https://tools.local.dagdappshub.com/",
+    );
+  });
+
+  it("traefik write contains correct dag-tools block", async () => {
+    await main(executor);
+
+    expect(executor.traefikWriteCalls).toHaveLength(1);
+    const { content } = executor.traefikWriteCalls[0];
+
+    expect(content).toContain("tools.local.dagdappshub.com");
+    expect(content).toContain("websecure");
+    expect(content).toContain("cloudflare");
+    expect(content).toContain("192.168.4.21:3010");
+    expect(content).toContain("# >>> dag-tools >>>");
+    expect(content).toContain("# <<< dag-tools <<<");
+  });
+
+  it("traefik smoke failure throws", async () => {
+    executor.traefikSmokeCheckResult = false;
+
+    await expect(main(executor)).rejects.toThrow("Traefik smoke check");
+  });
+
+  it("traefik backup called before write", async () => {
+    // We need to track call order. FakeExecutor arrays preserve insertion.
+    // Instead, use a flag approach.
+    let backupCalled = false;
+    const origBackup = executor.traefikBackupConfig.bind(executor);
+    executor.traefikBackupConfig = async (path: string) => {
+      backupCalled = true;
+      return origBackup(path);
+    };
+
+    await main(executor);
+
+    expect(executor.traefikWriteCalls).toHaveLength(1);
+    expect(backupCalled).toBe(true);
+  });
+
+  it("traefik stage uses custom env vars when set", async () => {
+    executor.shellEnv = {
+      PORTAINER_API_KEY: "key",
+      TRAEFIK_CONFIG_PATH: "/custom/traefik/dynamic.yml",
+      TRAEFIK_SMOKE_URL: "https://custom.smoke.local/",
+    };
+
+    await main(executor);
+
+    expect(executor.traefikBackupCalls[0]).toBe(
+      "/custom/traefik/dynamic.yml",
+    );
+    expect(executor.traefikSmokeCheckCalls[0].url).toBe(
+      "https://custom.smoke.local/",
+    );
+  });
+
+  it("traefik stage skipped when portainer smoke check fails", async () => {
+    executor.smokeCheckResult = false;
+
+    await expect(main(executor)).rejects.toThrow("Smoke check");
+
+    expect(executor.traefikBackupCalls).toHaveLength(0);
+    expect(executor.traefikWriteCalls).toHaveLength(0);
+    expect(executor.traefikRestartCalls).toBe(0);
+    expect(executor.traefikSmokeCheckCalls).toHaveLength(0);
   });
 });
