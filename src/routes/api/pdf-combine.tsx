@@ -5,7 +5,7 @@ import type { AppDeps } from "@/app";
 import { inspectPdf } from "@/modules/inspect-pdf";
 import { mergePdfs } from "@/modules/merge-pdfs";
 import { persistArtifact } from "@/server/artifacts";
-import { ShareLinkPanel } from "@/ui/components/share-link-panel";
+import { CombineSuccessPanel } from "@/ui/components/combine-success-panel";
 import { CombineErrorPanel } from "@/ui/components/combine-error-panel";
 
 export function register(app: Hono, deps: AppDeps): void {
@@ -73,7 +73,7 @@ export function register(app: Hono, deps: AppDeps): void {
     );
 
     return c.html(
-      <ShareLinkPanel id={id} filename={filename} pageCount={pageCount} />,
+      <CombineSuccessPanel id={id} filename={filename} pageCount={pageCount} />,
     );
   });
 

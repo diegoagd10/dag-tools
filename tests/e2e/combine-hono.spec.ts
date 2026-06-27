@@ -113,17 +113,19 @@ test("dragging cards reorders them and submit produces pages in Merge Order", as
   // Submit
   await page.getByTestId("combine-button").click();
 
-  // Result panel appears
+  // Success screen renders: headline, download link, Combine More Files action
   await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
-  const urlInput = page.locator("#combine-result input[type='text']");
-  await expect(urlInput).toBeVisible();
-  const inputValue = await urlInput.inputValue();
-  expect(inputValue).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
+  await expect(page.locator("#combine-result")).toContainText("Files Combined Successfully");
+  await expect(page.getByText("Download Combined PDF")).toBeVisible();
+  await expect(page.getByText("Combine More Files")).toBeVisible();
+
+  // No copyable URL input
+  await expect(page.locator("#combine-result input[type='text']")).toHaveCount(0);
 
   // Download the Combined PDF and verify page order
   const downloadPromise = page.waitForEvent("download");
-  const link = page.locator("#combine-result a");
-  await link.click();
+  const downloadLink = page.getByText("Download Combined PDF");
+  await downloadLink.click();
   const download = await downloadPromise;
 
   // Verify the download is a PDF
@@ -256,19 +258,17 @@ test("submit succeeds and yields a downloadable Combined PDF", async ({ page }) 
   // Submit
   await page.getByTestId("combine-button").click();
 
-  // Old Share-Link result panel renders
+  // Success screen renders with headline, no copyable URL input
   await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+  await expect(page.locator("#combine-result")).toContainText("Files Combined Successfully");
 
-  // Share-ID link present
-  const urlInput = page.locator("#combine-result input[type='text']");
-  await expect(urlInput).toBeVisible();
-  const inputValue = await urlInput.inputValue();
-  expect(inputValue).toMatch(/^\/pdf\/combine\/[A-Za-z0-9_-]+$/);
+  // No copyable URL input field
+  await expect(page.locator("#combine-result input[type='text']")).toHaveCount(0);
 
   // Download via share link
   const downloadPromise = page.waitForEvent("download");
-  const link = page.locator("#combine-result a");
-  await link.click();
+  const downloadLink = page.getByText("Download Combined PDF");
+  await downloadLink.click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/combined-\d{4}-\d{2}-\d{2}\.pdf/);
 });
@@ -340,4 +340,34 @@ test("oversized file (>50 MB) is rejected at add-time, button stays disabled", a
   } finally {
     unlinkSync(tmpPath);
   }
+});
+
+test('"Combine More Files" returns to an empty selection screen', async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+
+  // Wait for preflight and combine to be enabled
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+
+  // Submit
+  await page.getByTestId("combine-button").click();
+
+  // Success screen appears
+  await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+  await expect(page.locator("#combine-result")).toContainText("Files Combined Successfully");
+
+  // Click "Combine More Files"
+  await page.getByText("Combine More Files").click();
+
+  // Form reloads — selected count resets to 0, button disabled
+  await expect(page.getByTestId("selected-count")).toHaveText("0");
+  await expect(page.getByTestId("combine-button")).toBeDisabled();
+  await expect(page.getByTestId("combine-hint")).toBeVisible();
+  // No cards carried over
+  await expect(page.getByTestId("source-card")).toHaveCount(0);
 });

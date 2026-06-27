@@ -50,7 +50,7 @@ describe("POST /api/v1/pdf/combine", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Share Link in the HTML fragment", async () => {
+  it("returns 200 with a Combine success fragment", async () => {
     const fd = buildFormData();
     const res = await app.request("/api/v1/pdf/combine", {
       method: "POST",
@@ -60,8 +60,16 @@ describe("POST /api/v1/pdf/combine", () => {
     expect(res.status).toBe(200);
 
     const html = await res.text();
-    // Should contain a link to /pdf/combine/<id>
+    // Success headline
+    expect(html).toContain("Files Combined Successfully");
+    // Download action links to the Combined PDF Share Link
     expect(html).toMatch(/\/pdf\/combine\/[A-Za-z0-9_-]{12}/);
+    // "Download Combined PDF" action present
+    expect(html).toContain("Download Combined PDF");
+    // "Combine More Files" action present
+    expect(html).toContain("Combine More Files");
+    // No copyable share-URL input (ShareLinkPanel has one; success screen does not)
+    expect(html).not.toContain('type="text"');
     // Should not be a full HTML page (fragment only)
     expect(html).not.toContain("<!DOCTYPE html>");
     expect(html).not.toContain("<html");
