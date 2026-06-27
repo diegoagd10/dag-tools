@@ -268,6 +268,9 @@
   function handleFiles(fileList) {
     if (!fileList || fileList.length === 0) return;
 
+    // Bump FIRST so any in-flight async from a prior selection is invalidated
+    magicByteSeq++;
+
     // Abort any in-flight validation
     if (validationAbort) {
       validationAbort.abort();
@@ -304,7 +307,6 @@
     }
 
     // Magic bytes gate (%PDF-)
-    magicByteSeq++;
     var magicToken = magicByteSeq;
     validateMagicBytes(file, function (isValid) {
       // Stale-callback guard: if a newer selection arrived while reading, abort
