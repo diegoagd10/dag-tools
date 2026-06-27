@@ -1,10 +1,10 @@
 # dag-tools
 
-A web application that hosts multiple independent file-manipulation utilities ("Tools"). Each Tool is a self-contained workflow. Implemented Tools are PDF Combine and PDF Split; QR Code is planned.
+A web application that hosts multiple independent file-manipulation utilities ("Tools"). Each Tool is a self-contained workflow. Implemented Tools are PDF Combine, PDF Split, and QR Code.
 
 All Tool processing is server-side. Files traverse the Hono backend; Artifacts are stored on the filesystem with metadata in SQLite; every Tool produces a Share Link.
 
-Implemented Tools: PDF Combine, PDF Split. Planned: QR Code, PDF to EPUB (PDF to EPUB currently ships UI only — a form page with a disabled Convert control; no backend conversion yet).
+Implemented Tools: PDF Combine, PDF Split, QR Code. Planned: PDF to EPUB (PDF to EPUB currently ships UI only — a form page with a disabled Convert control; no backend conversion yet).
 
 All user-facing strings are in English.
 
@@ -18,8 +18,8 @@ _Avoid_: feature, mode, function, utility
 A Tool whose output is a downloadable file produced server-side from user-uploaded files. The Artifact (file + metadata row) is stored and made available via a Share Link. Implemented examples: PDF Combine Tool, PDF Split Tool.
 _Avoid_: file utility, download tool
 
-**Link Tool** *[planned]*:
-A Tool whose output is a Share Link that other people can open to retrieve the same content. The user-supplied content is stored server-side (inline in SQLite for small payloads) and rendered at the Share Link. Planned example: QR Code Tool.
+**Link Tool**:
+A Tool whose output is a Share Link that other people can open to retrieve the same content. The user-supplied content is stored server-side (inline in SQLite for small payloads) and rendered at the Share Link. Example: QR Code Tool.
 _Avoid_: share tool, link generator
 
 **Home**:
@@ -62,27 +62,27 @@ _Avoid_: ebook, converted file, output EPUB
 A File Tool that takes 1 Source PDF and produces one EPUB Document. Form at `/pdf/epub`. Backend is **not implemented**: the form page exists and reuses Source PDF validation, but the Convert control is permanently disabled with an inline "coming soon" note, and no API endpoint or Share Link is wired (`POST /api/v1/pdf/epub` and `/pdf/epub/:id` are reserved for when conversion lands).
 _Avoid_: EPUB converter, ebook tool, PDF-to-ebook
 
-**QR Content** *[planned]*:
+**QR Content**:
 The text string encoded into a QR Code by the QR Code Tool. May be a URL or plain text — the Tool does not distinguish between them. Stored inline in the `artifacts` table's `text_content` column.
 _Avoid_: URL, text, payload, input, query
 
-**QR Code** *[planned]*:
+**QR Code**:
 The visual representation of the encoded QR Content. What the user sees when the Share Link is opened. Encoding happens **server-side**: a dedicated QR Image Endpoint renders the QR Content to a PNG, and the Share Link page embeds it via an `<img>` element so the browser's native right-click "Save image as" works. No browser JS is involved in rendering (consistent with Server-Side Processing).
 _Avoid_: QR image, output image, barcode
 
-**QR Image Endpoint** *[planned]*:
+**QR Image Endpoint**:
 The server route that renders the QR Content for a given Share ID to a PNG (`Content-Type: image/png`) and is used as the `src` of the `<img>` on the Share Link page. Enables native browser image download. Route `GET /links/qr/:id.png`.
 _Avoid_: QR url, image route
 
 **Share Link**:
-A URL of the form `/<group>/<tool>/:id` that, when opened, fetches the corresponding Artifact from the backend. The Share ID is the only authorization — anyone with the link has access. Examples: `/pdf/combine/:id`, `/pdf/split/:id`, `/links/qr/:id` (planned).
+A URL of the form `/<group>/<tool>/:id` that, when opened, fetches the corresponding Artifact from the backend. The Share ID is the only authorization — anyone with the link has access. Examples: `/pdf/combine/:id`, `/pdf/split/:id`, `/links/qr/:id`.
 _Avoid_: short URL, shareable link, public link
 
 **Share ID**:
 The opaque string identifier of an Artifact. Generated when the Tool is invoked and embedded in the Share Link. Generation strategy is deferred (design seam); the schema accepts any opaque string of reasonable length, so the implementation can be swapped (nanoid, UUID, base62, etc.) without migration.
 _Avoid_: token, slug, short code
 
-**QR Code Tool** *[planned]*:
+**QR Code Tool**:
 A Link Tool that encodes a QR Content into a QR Code and produces a Share Link for distribution. Form at `/links/qr`, API at `POST /api/v1/links/qr`, Share Link at `/links/qr/:id`. The Share Link page is rendered server-side: the backend reads the QR Content and embeds the QR Code via an `<img>` pointing at the QR Image Endpoint (`/links/qr/:id.png`).
 _Avoid_: QR generator, QR maker, QR tool
 
