@@ -19,7 +19,7 @@ export const SourcePdfCard = ({
   reason?: string;
 }) => (
   <div
-    class="source-card flex items-center gap-3 rounded border border-combine-border bg-combine-surface px-3 py-2"
+    class="source-card flex items-center gap-3 rounded-lg border border-combine-border bg-combine-surface px-3 py-2"
     data-testid="source-card"
     data-id={id}
   >
