@@ -75,3 +75,50 @@
 @utility text-home-text-secondary {
   color: var(--color-home-text-secondary);
 }
+
+/* Combine-scoped Kanagawa palette — per #54 Midnight Ink skin.
+   PDF Tools = tertiary coral accent (per ADR-0005 section-tint convention). */
+.page-combine {
+  --color-combine-bg: #051424;
+  --color-combine-surface: #122131;
+  --color-combine-border: #45464d;
+  --color-combine-icon-tile: #1c2b3c;
+  --color-combine-text-primary: #d4e4fa;
+  --color-combine-text-secondary: #c6c6cd;
+  --color-combine-accent: #ffb3b0;
+  --color-combine-cta: #cb5f5f;
+}
+
+@utility bg-combine-canvas {
+  background-color: var(--color-combine-bg);
+}
+@utility bg-combine-surface {
+  background-color: var(--color-combine-surface);
+}
+@utility bg-combine-icon-tile {
+  background-color: var(--color-combine-icon-tile);
+}
+@utility border-combine-border {
+  border-color: var(--color-combine-border);
+}
+@utility text-combine-primary {
+  color: var(--color-combine-text-primary);
+}
+@utility text-combine-secondary {
+  color: var(--color-combine-text-secondary);
+}
+@utility text-combine-accent {
+  color: var(--color-combine-accent);
+}
+@utility bg-combine-accent {
+  background-color: var(--color-combine-accent);
+}
+@utility text-combine-cta {
+  color: var(--color-combine-cta);
+}
+@utility bg-combine-cta {
+  background-color: var(--color-combine-cta);
+}
+@utility border-combine-accent {
+  border-color: var(--color-combine-accent);
+}

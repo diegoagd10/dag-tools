@@ -257,35 +257,38 @@
       var rejectionHtml = "";
       if (item.reason) {
         rejectionHtml =
-          '<span class="card-rejection text-xs text-red-600" data-testid="card-rejection">' +
+          '<span class="card-rejection text-xs text-red-400" data-testid="card-rejection">' +
           escapeHtml(item.reason) +
           "</span>";
       }
 
       return (
-        '<div class="source-card flex items-center gap-3 rounded border border-hairline bg-paper px-3 py-2" data-testid="source-card" data-id="' +
+        '<div class="source-card flex items-center gap-3 rounded border border-combine-border bg-combine-surface px-3 py-2" data-testid="source-card" data-id="' +
         escapeHtml(item.id) +
         '">' +
-        '<div class="drag-handle shrink-0 cursor-grab text-muted hover:text-ink" data-testid="drag-handle" aria-hidden="true">' +
+        '<div class="drag-handle shrink-0 cursor-grab text-combine-secondary hover:text-combine-primary" data-testid="drag-handle" aria-hidden="true">' +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="h-4 w-4">' +
         '<line x1="5" y1="3" x2="5" y2="13" />' +
         '<line x1="9" y1="3" x2="9" y2="13" />' +
         "</svg>" +
         "</div>" +
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-accent" aria-hidden="true">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-combine-accent" aria-hidden="true">' +
         '<path d="M14 11V3H6" />' +
         '<path d="M14 3L8 9L5 6L2 9" />' +
         "</svg>" +
         '<div class="flex-1 min-w-0 flex flex-col gap-0.5">' +
-        '<span class="card-name truncate font-sans text-sm text-ink">' +
+        '<span class="card-name truncate font-sans text-sm text-combine-primary">' +
         escapeHtml(item.name) +
         "</span>" +
-        '<span class="card-size font-sans text-xs text-muted tabular-nums">' +
+        '<span class="card-size font-mono text-xs text-combine-secondary tabular-nums">' +
         formatBytes(item.size) +
         "</span>" +
         rejectionHtml +
         "</div>" +
-        '<button type="button" class="remove-card shrink-0 rounded p-1 text-muted transition-colors hover:text-red-600 hover:bg-red-50" data-testid="remove-card-button" aria-label="Remove this Source PDF">' +
+        '<button type="button" class="remove-card shrink-0 rounded p-1 text-combine-secondary transition-colors hover:text-red-400 hover:bg-red-900/20" data-testid="remove-card-button" aria-label="' +
+        'Remove ' +
+        escapeHtml(item.name) +
+        '">' +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">' +
         '<line x1="4" y1="4" x2="12" y2="12" />' +
         '<line x1="12" y1="4" x2="4" y2="12" />' +
@@ -410,7 +413,7 @@
       var lines = "";
       for (var i = 0; i < rejected.length; i++) {
         lines +=
-          '<div class="flex items-start gap-1.5 text-xs text-red-700" data-testid="add-rejection-item">' +
+          '<div class="flex items-start gap-1.5 text-xs text-red-400" data-testid="add-rejection-item">' +
           '<span aria-hidden="true">\u2716</span>' +
           "<span>" +
           escapeHtml(rejected[i].name) +
@@ -420,7 +423,7 @@
           "</div>";
       }
       return (
-        '<div id="add-rejection-panel" data-testid="add-rejection-panel" role="status" aria-live="polite" class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 flex flex-col gap-1">' +
+        '<div id="add-rejection-panel" data-testid="add-rejection-panel" role="status" aria-live="polite" class="mt-3 rounded border border-red-900/40 bg-red-950/50 px-3 py-2 flex flex-col gap-1">' +
         lines +
         "</div>"
       );
@@ -494,23 +497,31 @@
       selection.remove(id);
     });
 
+    // Drop-zone: keyboard activation (Enter / Space triggers the hidden input)
+    dropZone.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        inputEl.click();
+      }
+    });
+
     // Drop-zone: drag-and-drop
     dropZone.addEventListener("dragover", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.add("border-accent", "bg-accent/5");
+      dropZone.classList.add("border-combine-accent", "bg-combine-accent/10");
     });
 
     dropZone.addEventListener("dragleave", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove("border-accent", "bg-accent/5");
+      dropZone.classList.remove("border-combine-accent", "bg-combine-accent/10");
     });
 
     dropZone.addEventListener("drop", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove("border-accent", "bg-accent/5");
+      dropZone.classList.remove("border-combine-accent", "bg-combine-accent/10");
 
       if (!e.dataTransfer || !e.dataTransfer.files) return;
       if (e.dataTransfer.files.length === 0) return;

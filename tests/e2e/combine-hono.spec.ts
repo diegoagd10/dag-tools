@@ -342,6 +342,127 @@ test("oversized file (>50 MB) is rejected at add-time, button stays disabled", a
   }
 });
 
+test("drop-zone is keyboard-reachable and has accessible role", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const dropZone = page.getByTestId("drop-zone");
+  await expect(dropZone).toHaveAttribute("tabindex", "0");
+  await expect(dropZone).toHaveAttribute("role", "button");
+  await expect(dropZone).toHaveAttribute("aria-label");
+
+  // Tab through the nav links to reach the drop zone (brand + 3 nav = 4 tabs)
+  // One extra for possible browser chrome focus (URL bar)
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press("Tab");
+  }
+  await expect(dropZone).toBeFocused();
+
+  // Pressing Enter on the drop zone triggers the hidden file input
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    dropZone.press("Enter"),
+  ]);
+  expect(fileChooser).toBeTruthy();
+  // Dismiss the file chooser without selecting
+  await fileChooser.setFiles([]);
+});
+
+test("selected-count is announced to assistive technology", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const selectedCount = page.getByTestId("selected-count");
+  // The element itself or its parent should have aria-live="polite"
+  const countSpan = page.locator("#selected-count");
+  await expect(countSpan).toHaveAttribute("aria-live", "polite");
+});
+
+test("rejection messages are announced to assistive technology", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles(resolve(fixtures, "not-a-pdf.txt"));
+
+  const panel = page.getByTestId("add-rejection-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveAttribute("role", "status");
+  await expect(panel).toHaveAttribute("aria-live", "polite");
+});
+
+test("no Merge copy on Combine screens — selection and success", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  // The selection screen should not contain "Merge" (uses Combine vocabulary)
+  const pageText = await page.locator("body").innerText();
+  expect(pageText).not.toContain("Merge");
+
+  // Submit and verify success screen also uses "Combine" vocabulary
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+  await page.getByTestId("combine-button").click();
+
+  await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+  const resultText = await page.locator("#combine-result").innerText();
+  expect(resultText).not.toContain("Merge");
+  expect(resultText).toContain("Combine");
+});
+
+test("narrow viewport (375x812) — drop zone, cards, CTAs visible and operable", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/pdf/combine");
+
+  // Drop zone visible and has proper size (not collapsed)
+  const dropZone = page.getByTestId("drop-zone");
+  await expect(dropZone).toBeVisible();
+  const dzBox = await dropZone.boundingBox();
+  expect(dzBox).toBeTruthy();
+  expect(dzBox!.width).toBeGreaterThan(200);
+
+  // Cards fit on narrow viewport
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+
+  // CTA button visible and clickable
+  const combineBtn = page.getByTestId("combine-button");
+  await expect(combineBtn).toBeVisible();
+  await combineBtn.click();
+
+  // Success screen fits
+  await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+  const resultBox = await page.locator("#combine-result").boundingBox();
+  expect(resultBox).toBeTruthy();
+  expect(resultBox!.width).toBeLessThanOrEqual(375);
+
+  // All CTAs visible
+  await expect(page.getByText("Download Combined PDF")).toBeVisible();
+  await expect(page.getByText("Combine More Files")).toBeVisible();
+});
+
+test("coral accent check icon on success screen", async ({ page }) => {
+  await page.goto("/pdf/combine");
+
+  const input = page.getByTestId("drop-zone-input");
+  await input.setInputFiles([
+    resolve(fixtures, "sample-1.pdf"),
+    resolve(fixtures, "sample-2.pdf"),
+  ]);
+  await expect(page.getByTestId("combine-button")).toBeEnabled({ timeout: 5000 });
+  await page.getByTestId("combine-button").click();
+
+  await expect(page.locator("#combine-result")).toBeVisible({ timeout: 10000 });
+
+  // The success check icon (circle + checkmark) should use combine accent
+  const successSvg = page.locator("#combine-result svg.text-combine-accent");
+  await expect(successSvg).toBeVisible();
+});
+
 test('"Combine More Files" returns to an empty selection screen', async ({ page }) => {
   await page.goto("/pdf/combine");
 

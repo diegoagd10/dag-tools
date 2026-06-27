@@ -253,6 +253,19 @@ describe("GET /pdf/combine", () => {
     expect(html).toContain("<html");
   });
 
+  it("renders on the Combine navy canvas", async () => {
+    const res = await app.request("/pdf/combine");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("bg-combine-canvas");
+  });
+
+  it("does not leak Merge copy into Combine pages", async () => {
+    const res = await app.request("/pdf/combine");
+    const html = await res.text();
+    expect(html).not.toContain("Merge");
+  });
+
   it("does not expose the obsolete /pdf/combine/row route", async () => {
     const res = await app.request("/pdf/combine/row?index=1");
     expect(res.status).toBe(404);
