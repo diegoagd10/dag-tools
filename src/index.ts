@@ -5,7 +5,7 @@ import { dirname } from "node:path";
 import { createApp } from "@/app";
 import { initDb } from "@/server/db";
 
-const port = parseInt(process.env.PORT || "3001", 10);
+const port = parseInt(process.env.PORT || "3000", 10);
 const dbPath = process.env.DB_PATH || "./data/dag-tools.db";
 const storageDir = process.env.STORAGE_DIR || "./storage";
 
