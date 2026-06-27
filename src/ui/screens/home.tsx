@@ -136,7 +136,7 @@ const WorkingCard = ({
       {tool.icon}
     </div>
     <div class="flex flex-col gap-1">
-      <h3 class="font-sans text-base font-semibold text-home-text-primary">
+      <h3 class="font-display text-base font-semibold text-home-text-primary">
         {tool.name}
       </h3>
       <p class="text-sm text-home-text-secondary">{tool.description}</p>
@@ -170,7 +170,7 @@ const ComingSoonCard = ({
       {tool.icon}
     </div>
     <div class="flex flex-col gap-1">
-      <h3 class="font-sans text-base font-semibold text-home-text-primary">
+      <h3 class="font-display text-base font-semibold text-home-text-primary">
         {tool.name}
       </h3>
       <p class="text-sm text-home-text-secondary">{tool.description}</p>
@@ -206,7 +206,7 @@ const SectionBlock = ({
         style={{ background: accentColor }}
         aria-hidden="true"
       />
-      <h2 class="font-sans text-lg font-semibold text-home-text-primary">
+      <h2 class="font-display text-lg font-semibold text-home-text-primary">
         {title}
       </h2>
       <span

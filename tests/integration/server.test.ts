@@ -123,4 +123,39 @@ describe("Home route", () => {
       expect(text).toContain("PDF Split");
     });
   });
+
+  describe("Fonts", () => {
+    it("served CSS contains @font-face for Sora, Inter, and JetBrains Mono", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/static/styles.css");
+      expect(res.status).toBe(200);
+      const css = await res.text();
+      expect(css).toMatch(/@font-face/);
+      expect(css).toMatch(/font-family:\s*"Sora"/);
+      expect(css).toMatch(/font-family:\s*"Inter"/);
+      expect(css).toMatch(/font-family:\s*"JetBrains Mono"/);
+      expect(css).toMatch(/font-display:\s*swap/);
+    });
+
+    it("served CSS does not reference Google Fonts CDN", async () => {
+      const app = createApp({ db, storageDir });
+      const res = await app.request("/static/styles.css");
+      const css = await res.text();
+      expect(css).not.toContain("fonts.googleapis.com");
+      expect(css).not.toContain("fonts.gstatic.com");
+    });
+
+    it("serves self-hosted woff2 font files", async () => {
+      const app = createApp({ db, storageDir });
+      for (const file of [
+        "/static/fonts/sora-600.woff2",
+        "/static/fonts/sora-700.woff2",
+        "/static/fonts/inter-400.woff2",
+        "/static/fonts/jetbrains-mono-500.woff2",
+      ]) {
+        const res = await app.request(file);
+        expect(res.status, file).toBe(200);
+      }
+    });
+  });
 });
