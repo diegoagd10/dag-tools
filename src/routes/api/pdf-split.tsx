@@ -5,7 +5,7 @@ import type { AppDeps } from "@/app";
 import { inspectPdf } from "@/modules/inspect-pdf";
 import { splitPdfs } from "@/modules/split-pdfs";
 import { persistArtifact } from "@/server/artifacts";
-import { ShareLinkPanel } from "@/ui/components/share-link-panel";
+import { SplitSuccessPanel } from "@/ui/components/split-success-panel";
 import { SplitErrorPanel } from "@/ui/components/split-error-panel";
 
 export function register(app: Hono, deps: AppDeps): void {
@@ -76,11 +76,10 @@ export function register(app: Hono, deps: AppDeps): void {
     );
 
     return c.html(
-      <ShareLinkPanel
+      <SplitSuccessPanel
         id={id}
         filename={filename}
         pageCount={pageCount}
-        pathPrefix="/pdf/split"
       />,
     );
   });

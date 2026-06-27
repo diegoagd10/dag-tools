@@ -38,7 +38,7 @@ describe("POST /api/v1/pdf/split", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Share Link in the HTML fragment (happy path)", async () => {
+  it("returns 200 with a success fragment containing download link and no share URL field (happy path)", async () => {
     const fd = buildFormData("sample-multi-page.pdf");
     const res = await app.request("/api/v1/pdf/split", {
       method: "POST",
@@ -53,8 +53,17 @@ describe("POST /api/v1/pdf/split", () => {
     // Should not be a full HTML page (fragment only)
     expect(html).not.toContain("<!DOCTYPE html>");
     expect(html).not.toContain("<html");
-    // Should mention split context
-    expect(html).toContain("Split PDFs ready");
+    // Should contain the new success fragment content
+    expect(html).toContain("Files Split Successfully");
+    expect(html).toContain("Download Files (ZIP)");
+    expect(html).toContain("Return to Split Tool");
+    expect(html).toContain("Your Split ZIP archive");
+    // Should NOT contain the ShareLinkPanel copy-URL field text
+    expect(html).not.toContain("Share the link below");
+    // Should NOT contain a readonly text input (copy-URL field)
+    expect(html).not.toContain('type="text"');
+    // Should contain the download anchor with download attribute
+    expect(html).toContain("download");
   });
 
   it("persists an artifact row in the database", async () => {
@@ -314,56 +323,56 @@ describe("GET /pdf/split (form page)", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("renders the Split form with file input and disabled Split button", async () => {
+  it("renders the Split form with drop zone, hidden file input, and disabled Split PDF button", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain("PDF Split");
-    expect(html).toContain('id="split-file-input"');
+    expect(html).toContain("Split a PDF Document");
+    expect(html).toContain('id="drop-zone"');
+    expect(html).toContain('name="file"');
+    expect(html).toContain('type="file"');
+    expect(html).toContain('accept=".pdf"');
     expect(html).toContain('id="split-btn"');
     expect(html).toContain("disabled");
     expect(html).toContain("hx-post=\"/api/v1/pdf/split\"");
     expect(html).toContain("split-form.js");
+    expect(html).toContain('id="split-hint"');
+    expect(html).toContain('id="split-file-rejection"');
   });
 
-  it("renders a hidden File Summary scaffold with stable hooks for the client to populate", async () => {
+  it("does NOT render the old summary scaffold or task line", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
-    // Summary container exists and is hidden until a valid Source PDF is chosen
-    expect(html).toContain('id="split-file-summary"');
-    expect(html).toContain('data-testid="split-file-summary"');
-    expect(html).toMatch(/id="split-file-summary"[^>]*class="[^"]*hidden/);
-
-    // Filename slot
-    expect(html).toContain('id="split-summary-name"');
-    expect(html).toContain('data-testid="split-summary-name"');
-
-    // "N Pages • N MB" meta slot
-    expect(html).toContain('id="split-summary-meta"');
-    expect(html).toContain('data-testid="split-summary-meta"');
-
-    // Read-only Task / Mode / Output line, populated by the client from the
-    // validate preflight (pageCount) — no second PDF parse on the client.
-    expect(html).toContain('id="split-summary-task-line"');
-    expect(html).toContain('data-testid="split-summary-task-line"');
-    // Read-only summary mentions the Task, Mode, and Output labels up front;
-    // the client fills in the Output count ("N Files (.zip)") from pageCount.
-    expect(html).toContain("PDF Splitting");
-    expect(html).toContain("Extract All");
-    expect(html).toContain("Files (.zip)");
+    expect(html).not.toContain('id="split-file-summary"');
+    expect(html).not.toContain("PDF Splitting");
+    expect(html).not.toContain("Extract All");
   });
 
-  it("contains no false feature-card copy: encryption, accounts, auto-deletion, instant split, zero loss", async () => {
+  it("renders the truthful trust-badge row: Server-Side Processing, No Account Needed, Shareable Link", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Truthful trio must appear exactly.
+    expect(html).toContain("Server-Side Processing");
+    expect(html).toContain("No Account Needed");
+    expect(html).toContain("Shareable Link");
+  });
+
+  it("contains no false feature-card copy: Client-side Only, Instant Processing, encryption-related, and other mockup lies", async () => {
     const res = await app.request("/pdf/split");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
     // Forbidden marketing copy from the mockup — must not appear anywhere.
+    expect(html).not.toContain("Client-side Only");
+    expect(html).not.toContain("Instant Processing");
     expect(html).not.toContain("Secure Processing");
     expect(html).not.toContain("Instant Split");
     expect(html).not.toContain("Zero Loss");
@@ -373,6 +382,24 @@ describe("GET /pdf/split (form page)", () => {
     // "encrypted" is the only honest rejection reason surfaced by the client
     // (password-protected PDFs); it never appears in the server-rendered page.
     // The client injects that word into #split-file-rejection only on failure.
+  });
+
+  it("renders with Midnight Ink split tokens: page-split scope on body, coral utility classes present", async () => {
+    const res = await app.request("/pdf/split");
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+
+    // Page-scoped CSS class applied to <body>
+    expect(html).toContain("page-split");
+    // Canvas background utility class applied
+    expect(html).toContain("bg-split-canvas");
+    // At least one coral accent utility class present (hex values live in CSS, not inline HTML)
+    const hasCoral =
+      html.includes("text-split-accent") ||
+      html.includes("bg-split-cta") ||
+      html.includes("border-split-accent");
+    expect(hasCoral).toBe(true);
   });
 });
 
