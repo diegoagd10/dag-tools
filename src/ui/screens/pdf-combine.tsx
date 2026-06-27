@@ -1,17 +1,20 @@
 /** @jsxImportSource hono/jsx */
 
 import { Layout } from "@/ui/layout";
-import { SourcePdfRow } from "@/ui/components/source-pdf-row";
 
 export const PdfCombine = ({ currentPath }: { currentPath?: string }) => {
   return (
-    <Layout title="PDF Combine — dag-tools" currentPath={currentPath}>
-      <h1 class="font-sans text-4xl font-medium tracking-[-0.01em] text-ink">
+    <Layout
+      title="PDF Combine — dag-tools"
+      currentPath={currentPath}
+      bodyClass="bg-combine-canvas page-combine"
+    >
+      <h1 class="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.01em] text-combine-primary">
         PDF Combine
       </h1>
-      <p class="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
-        Upload two or more Source PDFs to merge them into a single Combined
-        PDF. Drag the rows to set the Merge Order.
+      <p class="mt-4 max-w-xl text-base leading-relaxed text-combine-secondary">
+        Upload two or more Source PDFs to combine them into a single Combined
+        PDF. Drag the cards to set the Combine Order.
       </p>
 
       <form
@@ -25,28 +28,51 @@ export const PdfCombine = ({ currentPath }: { currentPath?: string }) => {
         hx-on--before-swap="if(event.detail.xhr.status === 422) event.detail.shouldSwap = true"
         class="mt-8 flex w-full max-w-xl flex-col gap-4"
       >
-        <div id="source-rows" data-testid="source-rows" class="flex flex-col gap-3">
-          <SourcePdfRow index={1} />
-          <SourcePdfRow index={2} />
+        <div
+          id="drop-zone"
+          data-testid="drop-zone"
+          role="button"
+          tabindex={0}
+          aria-label="Drop PDF files here or press Enter to browse"
+          class="relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-combine-border bg-combine-surface px-6 py-10 text-center transition-colors duration-150 hover:border-combine-accent hover:bg-combine-accent/10"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-8 w-8 text-combine-accent"
+            aria-hidden="true"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <p class="font-sans text-sm text-combine-secondary">
+            Drag &amp; Drop PDFs / or click to browse your system
+          </p>
+          <input
+            type="file"
+            id="files-input"
+            name="files[]"
+            data-testid="drop-zone-input"
+            accept=".pdf,application/pdf"
+            multiple
+            tabindex={-1}
+            class="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+          />
         </div>
 
-        <button
-          id="add-file-btn"
-          data-testid="add-file-button"
-          type="button"
-          hx-get="/pdf/combine/row?index=0"
-          hx-target="#source-rows"
-          hx-swap="beforeend"
-          class="inline-flex w-fit items-center rounded border border-dashed border-accent/40 px-3 py-1.5 font-sans text-xs text-accent transition-colors duration-150 hover:border-accent hover:bg-accent/5"
-        >
-          + Add file
-        </button>
-
-        <div id="size-info" class="text-xs text-muted">
-          Running total:{" "}
-          <span id="running-total" data-testid="running-total" class="tabular-nums text-ink">
-            0 / 50 MB
-          </span>
+        <div id="selected-files-container" class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-mono text-xs font-medium uppercase tracking-[0.05em] text-combine-secondary">
+              Selected Files (<span id="selected-count" data-testid="selected-count" aria-live="polite">0</span>)
+            </h2>
+          </div>
+          <div id="source-cards" class="flex flex-col gap-2"></div>
         </div>
 
         <button
@@ -54,15 +80,15 @@ export const PdfCombine = ({ currentPath }: { currentPath?: string }) => {
           data-testid="combine-button"
           type="submit"
           disabled
-          class="mt-2 inline-flex w-fit items-center rounded bg-accent px-5 py-2.5 font-sans text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent"
+          class="mt-2 inline-flex w-fit items-center rounded bg-combine-accent px-5 py-2.5 font-sans text-sm font-medium text-combine-cta transition-colors duration-150 hover:bg-combine-cta disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-combine-accent"
         >
-          Combine
+          Combine Files
         </button>
 
         <p
           id="combine-hint"
           data-testid="combine-hint"
-          class="text-sm text-muted"
+          class="font-mono text-xs text-combine-secondary"
         >
           Add at least 2 Source PDFs to combine.
         </p>
@@ -70,7 +96,7 @@ export const PdfCombine = ({ currentPath }: { currentPath?: string }) => {
 
       <div
         id="combine-indicator"
-        class="htmx-indicator mt-4 text-sm text-ink-soft"
+        class="htmx-indicator mt-4 text-sm text-combine-secondary"
       >
         Combining…
       </div>

@@ -50,7 +50,7 @@ describe("POST /api/v1/pdf/combine", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Share Link in the HTML fragment", async () => {
+  it("returns 200 with a Combine success fragment", async () => {
     const fd = buildFormData();
     const res = await app.request("/api/v1/pdf/combine", {
       method: "POST",
@@ -60,8 +60,16 @@ describe("POST /api/v1/pdf/combine", () => {
     expect(res.status).toBe(200);
 
     const html = await res.text();
-    // Should contain a link to /pdf/combine/<id>
+    // Success headline
+    expect(html).toContain("Files Combined Successfully");
+    // Download action links to the Combined PDF Share Link
     expect(html).toMatch(/\/pdf\/combine\/[A-Za-z0-9_-]{12}/);
+    // "Download Combined PDF" action present
+    expect(html).toContain("Download Combined PDF");
+    // "Combine More Files" action present
+    expect(html).toContain("Combine More Files");
+    // No copyable share-URL input (ShareLinkPanel has one; success screen does not)
+    expect(html).not.toContain('type="text"');
     // Should not be a full HTML page (fragment only)
     expect(html).not.toContain("<!DOCTYPE html>");
     expect(html).not.toContain("<html");
@@ -214,7 +222,7 @@ describe("POST /api/v1/pdf/combine", () => {
   });
 });
 
-describe("GET /pdf/combine/row", () => {
+describe("GET /pdf/combine", () => {
   let db: ReturnType<typeof Database>;
   let storageDir: string;
   let app: Hono;
@@ -222,7 +230,7 @@ describe("GET /pdf/combine/row", () => {
   beforeAll(() => {
     db = new Database(":memory:");
     initDb(db);
-    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-row-"));
+    storageDir = mkdtempSync(join(tmpdir(), "dag-tools-combine-form-"));
     app = createApp({ db, storageDir });
   });
 
@@ -231,28 +239,36 @@ describe("GET /pdf/combine/row", () => {
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it("returns 200 with a Source PDF row fragment containing a file input", async () => {
-    const res = await app.request("/pdf/combine/row?index=3");
+  it("renders the combine form with drop-zone and hidden files[] input", async () => {
+    const res = await app.request("/pdf/combine");
 
     expect(res.status).toBe(200);
     const html = await res.text();
 
-    // Should contain a file input named files[]
+    expect(html).toContain("combine-form");
     expect(html).toContain('name="files[]"');
-    // Should contain remove button
-    expect(html).toContain("remove-row");
-    // Should be a fragment, not a full HTML page
-    expect(html).not.toContain("<!DOCTYPE html>");
-    expect(html).not.toContain("<html");
-    // Should show the index in the label
-    expect(html).toContain("Source PDF 3");
+    expect(html).toContain("combine-button");
+    expect(html).toContain("drop-zone");
+    // Full page, not a fragment
+    expect(html).toContain("<html");
   });
 
-  it("renders a page-count readout slot next to the file size", async () => {
-    const res = await app.request("/pdf/combine/row?index=3");
+  it("renders on the Combine navy canvas", async () => {
+    const res = await app.request("/pdf/combine");
+    expect(res.status).toBe(200);
     const html = await res.text();
-    // The row exposes a page-count slot the client fills from preflight.
-    expect(html).toContain("page-count");
+    expect(html).toContain("bg-combine-canvas");
+  });
+
+  it("does not leak Merge copy into Combine pages", async () => {
+    const res = await app.request("/pdf/combine");
+    const html = await res.text();
+    expect(html).not.toContain("Merge");
+  });
+
+  it("does not expose the obsolete /pdf/combine/row route", async () => {
+    const res = await app.request("/pdf/combine/row?index=1");
+    expect(res.status).toBe(404);
   });
 });
 

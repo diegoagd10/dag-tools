@@ -5,7 +5,6 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import type { AppDeps } from "@/app";
 import { PdfCombine } from "@/ui/screens/pdf-combine";
-import { SourcePdfRow } from "@/ui/components/source-pdf-row";
 import { ArtifactNotFound } from "@/ui/screens/artifact-not-found";
 
 export function register(app: Hono, deps: AppDeps): void {
@@ -13,11 +12,6 @@ export function register(app: Hono, deps: AppDeps): void {
 
   app.get("/pdf/combine", (c) => {
     return c.html(<PdfCombine currentPath={c.req.path} />);
-  });
-
-  app.get("/pdf/combine/row", (c) => {
-    const index = parseInt(c.req.query("index") || "0", 10) || 0;
-    return c.html(<SourcePdfRow index={index} />);
   });
 
   app.get("/pdf/combine/:id", (c) => {

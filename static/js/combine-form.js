@@ -1,403 +1,553 @@
 /**
- * Client-side controller for the PDF Combine rich form.
- * - SortableJS drag-reorder rows
- * - Add/remove Source PDF rows
- * - Client-side file validation (extension, total size)
- * - Per-row server preflight via /api/v1/pdf/combine/validate to surface each
- *   Source PDF's page count next to its size readout
- * - Disable Combine button until enough selected rows are preflight-valid
+ * Client-side controller for the PDF Combine selection screen.
+ *
+ * Owns a Selection module (per ADR-0006) that manages an ordered set of
+ * Source PDFs, a hidden multiple-file input, and the Merge Order.
+ * Cards are client-rendered; preflight runs via POST /api/v1/pdf/combine/validate.
+ * SortableJS drives drag-reorder. Submission remains a native htmx form POST.
  *
  * No bundler — vanilla JS loaded via script tag. Depends on SortableJS
- * and htmx globals. The client never parses PDF bytes itself; page counts
- * come exclusively from the server preflight.
+ * and htmx globals.
  */
-
 (function () {
   "use strict";
 
-  const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
-  const MIN_SOURCE_PDF_COUNT = 2;
-  const VALIDATE_URL = "/api/v1/pdf/combine/validate";
 
-  // Per-row preflight cache + abort handle, keyed by the row element.
-  //   { file: File, status: "pending"|"valid"|"invalid", pageCount?: number, reason?: string, abort: AbortController }
-  var rowStates = new Map();
+  var MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
+  var MIN_SOURCE_PDF_COUNT = 2;
+  var VALIDATE_URL = "/api/v1/pdf/combine/validate";
 
-  let rowCounter = 0;
-  let sortableInst = null;
+  // ---------------------------------------------------------------------
+  // Selection module — per ADR-0006 contract
+  // ---------------------------------------------------------------------
+  function createSelection(inputEl) {
+    var items = []; // { id, name, size, file, status, reason? }
+    var nextId = 0;
+    var listeners = [];
 
-  function initSortable() {
-    const container = document.getElementById("source-rows");
-    if (!container) return;
-
-    // Destroy previous instance if exists
-    if (sortableInst) {
-      sortableInst.destroy();
-      sortableInst = null;
+    function dupKey(file) {
+      return file.name + "|" + file.size + "|" + file.lastModified;
     }
 
-    sortableInst = new Sortable(container, {
-      handle: ".sortable-grip",
-      animation: 150,
-      onEnd: function () {
-        // DOM order changed — no hidden fields to update.
-        // Merge Order = on-screen DOM order.
-        revalidate();
-      },
-    });
-  }
-
-  function countRows() {
-    const container = document.getElementById("source-rows");
-    return container ? container.querySelectorAll(".source-pdf-row").length : 0;
-  }
-
-  function updateAddButton() {
-    const btn = document.getElementById("add-file-btn");
-    if (!btn) return;
-    rowCounter = countRows();
-    const nextIndex = rowCounter + 1;
-    btn.setAttribute("hx-get", "/pdf/combine/row?index=" + nextIndex);
-  }
-
-  function removeRow(row) {
-    abortRowPreflight(row);
-    rowStates.delete(row);
-    row.remove();
-    updateAddButton();
-    renumberLabels();
-    revalidate();
-    initSortable();
-  }
-
-  function renumberLabels() {
-    const rows = document.querySelectorAll(".source-pdf-row");
-    rows.forEach(function (row, i) {
-      const label = row.querySelector("label");
-      if (label) {
-        label.textContent = "Source PDF " + (i + 1);
-      }
-    });
-  }
-
-  function getFileInputs() {
-    return document.querySelectorAll("#source-rows .source-pdf-row input[type='file']");
-  }
-
-  function formatBytes(bytes) {
-    if (bytes === 0) return "0 B";
-    const mb = bytes / (1024 * 1024);
-    if (mb >= 1) return mb.toFixed(1) + " MB";
-    const kb = bytes / 1024;
-    if (kb >= 1) return kb.toFixed(0) + " KB";
-    return bytes + " B";
-  }
-
-  function clearRowRejection(row) {
-    var prevMsg = row.querySelector(".rejection-msg");
-    if (prevMsg) prevMsg.remove();
-  }
-
-  function showRejection(row, msg) {
-    clearRowRejection(row);
-    var msgEl = document.createElement("p");
-    msgEl.className = "rejection-msg text-xs text-red-600 mt-1";
-    msgEl.setAttribute("data-testid", "row-rejection");
-    msgEl.textContent = msg;
-    row.appendChild(msgEl);
-  }
-
-  function setRowSize(row, bytes, visible) {
-    var sizeEl = row.querySelector(".file-size");
-    if (!sizeEl) return;
-    if (!visible) {
-      sizeEl.classList.add("hidden");
-      return;
-    }
-    sizeEl.textContent = formatBytes(bytes);
-    sizeEl.classList.remove("hidden");
-  }
-
-  // Page count comes only from the server preflight — never fabricated.
-  function setRowCount(row, pageCount) {
-    var countEl = row.querySelector(".page-count");
-    if (!countEl) return;
-    if (pageCount === null || pageCount === undefined) {
-      countEl.classList.add("hidden");
-      countEl.textContent = "";
-      return;
-    }
-    var pagesText = pageCount === 1 ? "1 page" : pageCount + " pages";
-    countEl.textContent = pagesText;
-    countEl.classList.remove("hidden");
-  }
-
-  function rejectionMessage(reason) {
-    var messages = {
-      "not-a-pdf": "This file is not a valid PDF",
-      encrypted: "This file is password-protected",
-      corrupt: "This file is corrupt or unreadable",
-    };
-    return messages[reason] || "This file could not be validated";
-  }
-
-  function abortRowPreflight(row) {
-    var state = rowStates.get(row);
-    if (state && state.abort) {
-      state.abort.abort();
-    }
-  }
-
-  // Sum the sizes of rows that passed the synchronous checks (extension + total
-  // cap). Sync-rejected and empty rows are excluded; pending/valid/invalid
-  // rows all showed a size, so they count toward the running total readout.
-  function computeRunningTotal() {
-    var rows = document.querySelectorAll("#source-rows .source-pdf-row");
-    var total = 0;
-    for (var i = 0; i < rows.length; i++) {
-      var st = rows[i].getAttribute("data-preflight-status");
-      if (st === "pending" || st === "valid" || st === "invalid") {
-        var input = rows[i].querySelector("input[type='file']");
-        var file = input && input.files && input.files[0];
-        if (file) total += file.size;
-      }
-    }
-    return total;
-  }
-
-  function refreshButtonAndTotal(runningTotal) {
-    var totalEl = document.getElementById("running-total");
-    if (totalEl) {
-      totalEl.textContent = formatBytes(runningTotal) + " / 50 MB";
-    }
-
-    var rows = document.querySelectorAll("#source-rows .source-pdf-row");
-    var validCount = 0;
-    var pendingCount = 0;
-    var rejectedCount = 0;
-    for (var i = 0; i < rows.length; i++) {
-      var st = rows[i].getAttribute("data-preflight-status") || "empty";
-      if (st === "valid") validCount++;
-      else if (st === "pending") pendingCount++;
-      else if (st === "rejected" || st === "invalid") rejectedCount++;
-    }
-
-    // Combine is unlocked only when enough selected rows are preflight-valid
-    // and none are pending or rejected.
-    var combineBtn = document.getElementById("combine-btn");
-    var canCombine =
-      validCount >= MIN_SOURCE_PDF_COUNT &&
-      pendingCount === 0 &&
-      rejectedCount === 0;
-    if (combineBtn) {
-      combineBtn.disabled = !canCombine;
-    }
-
-    var hintEl = document.getElementById("combine-hint");
-    if (hintEl) {
-      hintEl.style.display = canCombine ? "none" : "block";
-    }
-  }
-
-  function startPreflight(row, input, file) {
-    var controller = new AbortController();
-    var state = { file: file, status: "pending", abort: controller };
-    rowStates.set(row, state);
-
-    serverValidate(file, controller.signal, function (err, result) {
-      // Race guard: ignore the response if the row's file changed since this
-      // request was sent, or a newer preflight superseded it.
-      var currentFile = input.files && input.files[0];
-      if (currentFile !== file) return;
-      var latest = rowStates.get(row);
-      if (!latest || latest.file !== file) return;
-
-      if (err || !result || !result.valid) {
-        state.status = "invalid";
-        state.reason = (result && result.reason) || "corrupt";
-        setRowCount(row, null);
-        showRejection(row, rejectionMessage(state.reason));
-        row.setAttribute("data-preflight-status", "invalid");
-      } else {
-        state.status = "valid";
-        state.pageCount = result.pageCount;
-        clearRowRejection(row);
-        setRowCount(row, result.pageCount);
-        row.setAttribute("data-preflight-status", "valid");
-      }
-      refreshButtonAndTotal(computeRunningTotal());
-    });
-  }
-
-  function serverValidate(file, signal, callback) {
-    var fd = new FormData();
-    fd.append("file", file);
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", VALIDATE_URL);
-
-    if (signal) {
-      signal.addEventListener("abort", function () {
-        xhr.abort();
-      });
-      if (signal.aborted) return;
-    }
-
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        try {
-          callback(null, JSON.parse(xhr.responseText));
-        } catch {
-          callback(new Error("Invalid JSON response"));
+    function rebuildFiles() {
+      var dt = new DataTransfer();
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].file) {
+          dt.items.add(items[i].file);
         }
-      } else {
-        callback(new Error("Validation failed with status " + xhr.status));
       }
-    };
-    xhr.onerror = function () {
-      // Aborted requests are intentional — ignore them.
-      if (xhr.status === 0) return;
-      callback(new Error("Network error during validation"));
-    };
-    xhr.send(fd);
-  }
+      inputEl.files = dt.files;
+    }
 
-  function revalidate() {
-    var inputs = getFileInputs();
-    var runningTotal = 0;
-
-    for (var i = 0; i < inputs.length; i++) {
-      var input = inputs[i];
-      var row = input.closest(".source-pdf-row");
-      if (!row) continue;
-
-      var file = input.files && input.files[0];
-
-      // No file selected: clear the row completely.
-      if (!file) {
-        clearRowRejection(row);
-        setRowSize(row, 0, false);
-        setRowCount(row, null);
-        abortRowPreflight(row);
-        rowStates.delete(row);
-        row.setAttribute("data-preflight-status", "empty");
-        continue;
+    function notify() {
+      for (var i = 0; i < listeners.length; i++) {
+        listeners[i]();
       }
+    }
 
-      var name = file.name.toLowerCase();
+    /**
+     * @param {FileList|File[]} fileList
+     * @returns {{ added: Array, rejected: Array }}
+     */
+    function add(fileList) {
+      var added = [];
+      var rejected = [];
+      var existingKeys = {};
 
-      // Extension gate (synchronous).
-      if (!name.endsWith(".pdf")) {
-        clearRowRejection(row);
-        setRowSize(row, 0, false);
-        setRowCount(row, null);
-        showRejection(row, "This file is not a valid PDF");
-        abortRowPreflight(row);
-        rowStates.delete(row);
-        row.setAttribute("data-preflight-status", "rejected");
-        continue;
-      }
-
-      // Total-size gate (synchronous, order-dependent — preserved behavior).
-      if (runningTotal + file.size > MAX_TOTAL_BYTES) {
-        clearRowRejection(row);
-        setRowSize(row, 0, false);
-        setRowCount(row, null);
-        showRejection(row, "Adding this file would exceed the 50 MB total limit");
-        abortRowPreflight(row);
-        rowStates.delete(row);
-        row.setAttribute("data-preflight-status", "rejected");
-        continue;
-      }
-
-      runningTotal += file.size;
-      // Size is known client-side — show it immediately.
-      setRowSize(row, file.size, true);
-
-      // Reuse a cached preflight result when the file hasn't changed (e.g.
-      // after a drag reorder or adding/removing another row) so we don't
-      // refire the server round-trip or flicker the button.
-      var state = rowStates.get(row);
-      if (state && state.file === file) {
-        clearRowRejection(row);
-        if (state.status === "valid") {
-          setRowCount(row, state.pageCount);
-          row.setAttribute("data-preflight-status", "valid");
-        } else if (state.status === "invalid") {
-          setRowCount(row, null);
-          showRejection(row, rejectionMessage(state.reason));
-          row.setAttribute("data-preflight-status", "invalid");
-        } else {
-          // Still pending — keep page count hidden; the in-flight preflight
-          // will resolve and refresh the button.
-          setRowCount(row, null);
-          row.setAttribute("data-preflight-status", "pending");
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].file) {
+          existingKeys[dupKey(items[i].file)] = true;
         }
-      } else {
-        // New file (or first selection) — kick off the server preflight.
-        clearRowRejection(row);
-        setRowCount(row, null);
-        abortRowPreflight(row);
-        row.setAttribute("data-preflight-status", "pending");
-        startPreflight(row, input, file);
       }
-    }
 
-    refreshButtonAndTotal(runningTotal);
-  }
-
-  // Event delegation for the whole form
-  document.addEventListener("click", function (e) {
-    // Remove button
-    if (e.target.closest(".remove-row")) {
-      var row = e.target.closest(".source-pdf-row");
-      if (row) removeRow(row);
-      return;
-    }
-  });
-
-  // Listen for file input changes
-  document.addEventListener("change", function (e) {
-    var target = e.target;
-    if (target && target.type === "file" && target.closest("#source-rows")) {
-      revalidate();
-    }
-  });
-
-  // After htmx adds a row, reinitialize SortableJS and update counters
-  document.addEventListener("htmx:afterSettle", function (e) {
-    var target = e.target;
-    // Check if the settled element is a source-pdf-row or contains one
-    if (target && target.closest && target.closest("#source-rows")) {
-      initSortable();
-      updateAddButton();
-      revalidate();
-    }
-    // Also check if the settled element is inside source-rows
-    if (target && target.querySelector && target.querySelector(".source-pdf-row")) {
-      initSortable();
-      updateAddButton();
-      revalidate();
-    }
-  });
-
-  // Also handle hx-swap inner settle for the container itself
-  document.addEventListener("htmx:afterSwap", function (e) {
-    var target = e.target;
-    if (target && (target.id === "source-rows" || target.closest("#source-rows"))) {
-      // Small delay to let DOM settle
-      setTimeout(function () {
-        initSortable();
-        updateAddButton();
-        revalidate();
+      var runningTotal = items.reduce(function (sum, it) {
+        return sum + (it.file ? it.file.size : 0);
       }, 0);
-    }
-  });
 
-  // Initialize on page load
-  document.addEventListener("DOMContentLoaded", function () {
-    initSortable();
-    updateAddButton();
-    revalidate();
-  });
+      for (var i = 0; i < fileList.length; i++) {
+        var file = fileList[i];
+
+        // Extension gate
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+          rejected.push({ name: file.name, reason: "not-a-pdf" });
+          continue;
+        }
+
+        // Duplicate gate (name + size + lastModified)
+        var key = dupKey(file);
+        if (existingKeys[key]) {
+          rejected.push({ name: file.name, reason: "duplicate" });
+          continue;
+        }
+        existingKeys[key] = true;
+
+        // Total size gate (order-dependent 50 MB cap)
+        if (runningTotal + file.size > MAX_TOTAL_BYTES) {
+          rejected.push({ name: file.name, reason: "over-limit" });
+          continue;
+        }
+        runningTotal += file.size;
+
+        var id = "pdf-" + (++nextId);
+        items.push({
+          id: id,
+          name: file.name,
+          size: file.size,
+          file: file,
+          status: "pending",
+          reason: null,
+        });
+        added.push({ id: id, name: file.name, size: file.size });
+      }
+
+      if (added.length > 0 || rejected.length > 0) {
+        rebuildFiles();
+        notify();
+      }
+
+      return { added: added, rejected: rejected };
+    }
+
+    function remove(id) {
+      var idx = -1;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === id) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx === -1) return;
+      items.splice(idx, 1);
+      rebuildFiles();
+      notify();
+    }
+
+    function reorder(idsInOrder) {
+      var map = {};
+      for (var i = 0; i < items.length; i++) {
+        map[items[i].id] = items[i];
+      }
+      var reordered = [];
+      for (var i = 0; i < idsInOrder.length; i++) {
+        var it = map[idsInOrder[i]];
+        if (it) reordered.push(it);
+      }
+      items = reordered;
+      rebuildFiles();
+      notify();
+    }
+
+    function setStatus(id, status) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === id) {
+          if (typeof status === "string") {
+            items[i].status = status;
+            items[i].reason = null;
+          } else {
+            items[i].status = "invalid";
+            items[i].reason = status.invalid;
+          }
+          break;
+        }
+      }
+      notify();
+    }
+
+    function getItems() {
+      var result = [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        result.push({
+          id: it.id,
+          name: it.name,
+          size: it.size,
+          status: it.status,
+          reason: it.reason,
+        });
+      }
+      return result;
+    }
+
+    function getFile(id) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === id) return items[i].file;
+      }
+      return null;
+    }
+
+    function canSubmit() {
+      var validCount = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].status === "pending" || items[i].status === "invalid") {
+          return false;
+        }
+        if (items[i].status === "valid") {
+          validCount++;
+        }
+      }
+      return validCount >= MIN_SOURCE_PDF_COUNT;
+    }
+
+    function onChange(fn) {
+      listeners.push(fn);
+    }
+
+    return {
+      add: add,
+      remove: remove,
+      reorder: reorder,
+      setStatus: setStatus,
+      items: getItems,
+      getFile: getFile,
+      canSubmit: canSubmit,
+      onChange: onChange,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // Thin controller — glues Selection to the DOM
+  // ---------------------------------------------------------------------
+  function init() {
+
+    var inputEl = document.getElementById("files-input");
+    if (!inputEl) return;
+
+
+    var selection = createSelection(inputEl);
+    var cardsContainer = document.getElementById("source-cards");
+    var selectedCountEl = document.getElementById("selected-count");
+    var combineBtn = document.getElementById("combine-btn");
+    var combineHint = document.getElementById("combine-hint");
+    var dropZone = document.getElementById("drop-zone");
+    var removed = {}; // id -> true for in-flight preflight guard
+    var sortableInst = null;
+    var rejectionTimer = null; // timeout id for auto-dismiss of rejection panel
+
+    // -------------------------------------------------------------------
+    // Formatting
+    // -------------------------------------------------------------------
+    function formatBytes(bytes) {
+      if (bytes === 0) return "0 B";
+      var mb = bytes / (1024 * 1024);
+      if (mb >= 1) return mb.toFixed(1) + " MB";
+      var kb = bytes / 1024;
+      if (kb >= 1) return kb.toFixed(0) + " KB";
+      return bytes + " B";
+    }
+
+    function rejectionMessage(reason) {
+      var messages = {
+        "not-a-pdf": "This file is not a valid PDF",
+        encrypted: "This file is password-protected",
+        corrupt: "This file is corrupt or unreadable",
+      };
+      return messages[reason] || "This file could not be validated";
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement("div");
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    // -------------------------------------------------------------------
+    // Card rendering
+    // -------------------------------------------------------------------
+    function buildCardHTML(item) {
+      var rejectionHtml = "";
+      if (item.reason) {
+        rejectionHtml =
+          '<span class="card-rejection text-xs text-red-400" data-testid="card-rejection">' +
+          escapeHtml(item.reason) +
+          "</span>";
+      }
+
+      return (
+        '<div class="source-card flex items-center gap-3 rounded-lg border border-combine-border bg-combine-surface px-3 py-2" data-testid="source-card" data-id="' +
+        escapeHtml(item.id) +
+        '">' +
+        '<div class="drag-handle shrink-0 cursor-grab text-combine-secondary hover:text-combine-primary" data-testid="drag-handle" aria-hidden="true">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="h-4 w-4">' +
+        '<line x1="5" y1="3" x2="5" y2="13" />' +
+        '<line x1="9" y1="3" x2="9" y2="13" />' +
+        "</svg>" +
+        "</div>" +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-combine-accent" aria-hidden="true">' +
+        '<path d="M14 11V3H6" />' +
+        '<path d="M14 3L8 9L5 6L2 9" />' +
+        "</svg>" +
+        '<div class="flex-1 min-w-0 flex flex-col gap-0.5">' +
+        '<span class="card-name truncate font-sans text-sm text-combine-primary">' +
+        escapeHtml(item.name) +
+        "</span>" +
+        '<span class="card-size font-mono text-xs text-combine-secondary tabular-nums">' +
+        formatBytes(item.size) +
+        "</span>" +
+        rejectionHtml +
+        "</div>" +
+        '<button type="button" class="remove-card shrink-0 rounded p-1 text-combine-secondary transition-colors hover:text-red-400 hover:bg-red-900/20" data-testid="remove-card-button" aria-label="' +
+        'Remove ' +
+        escapeHtml(item.name) +
+        '">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">' +
+        '<line x1="4" y1="4" x2="12" y2="12" />' +
+        '<line x1="12" y1="4" x2="4" y2="12" />' +
+        "</svg>" +
+        "</button>" +
+        "</div>"
+      );
+    }
+
+    function render() {
+      var items = selection.items();
+      var html = "";
+      for (var i = 0; i < items.length; i++) {
+        html += buildCardHTML(items[i]);
+      }
+      cardsContainer.innerHTML = html;
+      selectedCountEl.textContent = String(items.length);
+      initSortable();
+    }
+
+    // -------------------------------------------------------------------
+    // SortableJS setup
+    // -------------------------------------------------------------------
+    function initSortable() {
+      if (sortableInst) {
+        sortableInst.destroy();
+        sortableInst = null;
+      }
+
+      var children = cardsContainer.children;
+      if (children.length === 0) return;
+
+      sortableInst = new Sortable(cardsContainer, {
+        handle: ".drag-handle",
+        animation: 150,
+        onEnd: function (evt) {
+          var ids = [];
+          var cards = cardsContainer.querySelectorAll("[data-id]");
+          for (var i = 0; i < cards.length; i++) {
+            ids.push(cards[i].getAttribute("data-id"));
+          }
+          selection.reorder(ids);
+        },
+      });
+    }
+
+    // -------------------------------------------------------------------
+    // Submit gate
+    // -------------------------------------------------------------------
+    function refreshSubmitGate() {
+      var can = selection.canSubmit();
+      combineBtn.disabled = !can;
+      combineHint.style.display = can ? "none" : "block";
+    }
+
+    // -------------------------------------------------------------------
+    // Preflight
+    // -------------------------------------------------------------------
+    function preflightFile(id, file) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", VALIDATE_URL);
+
+      var fd = new FormData();
+      fd.append("file", file);
+
+      xhr.onload = function () {
+        // Guard: file may have been removed while request was in-flight
+        if (removed[id]) return;
+
+        if (xhr.status === 200) {
+          try {
+            var result = JSON.parse(xhr.responseText);
+            if (result.valid) {
+              selection.setStatus(id, "valid");
+            } else {
+              selection.setStatus(id, {
+                invalid: rejectionMessage(result.reason || "corrupt"),
+              });
+            }
+          } catch (_e) {
+            selection.setStatus(id, {
+              invalid: rejectionMessage("corrupt"),
+            });
+          }
+        } else {
+          selection.setStatus(id, {
+            invalid: rejectionMessage("corrupt"),
+          });
+        }
+      };
+
+      xhr.onerror = function () {
+        if (xhr.status === 0) return; // aborted intentionally
+        if (removed[id]) return;
+        selection.setStatus(id, {
+          invalid: rejectionMessage("corrupt"),
+        });
+      };
+
+      xhr.send(fd);
+    }
+
+    function preflightAdded(added) {
+      for (var i = 0; i < added.length; i++) {
+        var file = selection.getFile(added[i].id);
+        if (file) {
+          preflightFile(added[i].id, file);
+        }
+      }
+    }
+
+    function addRejectionLabel(reason) {
+      var labels = {
+        "duplicate": "Already in the list",
+        "not-a-pdf": "Not a PDF file",
+        "over-limit": "Would exceed the 50 MB total limit",
+      };
+      return labels[reason] || reason;
+    }
+
+    function buildRejectionPanel(rejected) {
+      var lines = "";
+      for (var i = 0; i < rejected.length; i++) {
+        lines +=
+          '<div class="flex items-start gap-1.5 text-xs text-red-400" data-testid="add-rejection-item">' +
+          '<span aria-hidden="true">\u2716</span>' +
+          "<span>" +
+          escapeHtml(rejected[i].name) +
+          " \u2014 " +
+          escapeHtml(addRejectionLabel(rejected[i].reason)) +
+          "</span>" +
+          "</div>";
+      }
+      return (
+        '<div id="add-rejection-panel" data-testid="add-rejection-panel" role="status" aria-live="polite" class="mt-3 rounded border border-red-900/40 bg-red-950/50 px-3 py-2 flex flex-col gap-1">' +
+        lines +
+        "</div>"
+      );
+    }
+
+    function setRejectionTimer(panel) {
+      if (rejectionTimer !== null) {
+        clearTimeout(rejectionTimer);
+        rejectionTimer = null;
+      }
+      rejectionTimer = setTimeout(function () {
+        if (panel && panel.parentNode) panel.remove();
+        rejectionTimer = null;
+      }, 6000);
+    }
+
+    function showRejected(rejected) {
+      if (rejected.length === 0) return;
+
+      // Remove any previous rejection panel
+      var prev = document.getElementById("add-rejection-panel");
+      if (prev) prev.remove();
+
+      // Insert new panel right after the drop zone
+      var panelHtml = buildRejectionPanel(rejected);
+      dropZone.insertAdjacentHTML("afterend", panelHtml);
+
+      // Auto-dismiss after 6 seconds, clearing any previous timer first
+      var panel = document.getElementById("add-rejection-panel");
+      if (panel) setRejectionTimer(panel);
+    }
+
+    // -------------------------------------------------------------------
+    // Event wiring
+    // -------------------------------------------------------------------
+    selection.onChange(function () {
+      render();
+      refreshSubmitGate();
+    });
+
+    // Drop-zone: browse (change event on hidden file input)
+    inputEl.addEventListener("change", function () {
+
+      if (!inputEl.files || inputEl.files.length === 0) return;
+
+      // Snapshot files into a plain array BEFORE clearing the input.
+      // inputEl.files is a live FileList — clearing value empties it.
+      var files = Array.prototype.slice.call(inputEl.files);
+
+      // Reset input for re-selection edge case — clear before add
+      // so rebuildFiles() inside selection.add() repopulates
+      // inputEl.files for form submission.
+      inputEl.value = "";
+
+      var result = selection.add(files);
+      showRejected(result.rejected);
+      preflightAdded(result.added);
+      
+    });
+
+    // Card container: trash button (event delegation)
+    cardsContainer.addEventListener("click", function (e) {
+      var removeBtn = e.target.closest("[data-testid='remove-card-button']");
+      if (!removeBtn) return;
+
+      var card = removeBtn.closest("[data-id]");
+      if (!card) return;
+
+      var id = card.getAttribute("data-id");
+      removed[id] = true;
+      selection.remove(id);
+    });
+
+    // Drop-zone: keyboard activation (Enter / Space triggers the hidden input)
+    dropZone.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        inputEl.click();
+      }
+    });
+
+    // Drop-zone: drag-and-drop
+    dropZone.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add("border-combine-accent", "bg-combine-accent/10");
+    });
+
+    dropZone.addEventListener("dragleave", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("border-combine-accent", "bg-combine-accent/10");
+    });
+
+    dropZone.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("border-combine-accent", "bg-combine-accent/10");
+
+      if (!e.dataTransfer || !e.dataTransfer.files) return;
+      if (e.dataTransfer.files.length === 0) return;
+
+      // Reset browse input for re-selection edge case
+      inputEl.value = "";
+
+      var result = selection.add(e.dataTransfer.files);
+      showRejected(result.rejected);
+      preflightAdded(result.added);
+    });
+
+    // Initial render
+    render();
+    refreshSubmitGate();
+    
+    // Expose for e2e testing
+    window.__combineSelection = selection;
+  }
+
+  // ---------------------------------------------------------------------
+  // Bootstrap
+  // ---------------------------------------------------------------------
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
